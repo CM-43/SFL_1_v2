@@ -53,7 +53,8 @@ window.SFL_CONTENT = {
     // Reasons offered after every move in Assign. VERIFIED: four reasons plus Cancel.
     // Short labels (buttons, reasons, mood words, tabs, slot names, small headings) use the real game's wording (Master Doc D55);
     // full sentences are our own.
-    // needs = what the candidate must have asked, that day, for the reason to be honest.
+    // needs = what the candidate must have asked, on any day so far (Day 1 up to today), for the reason to be honest.
+    //   The candidate's memory does not reset at midnight, so a question asked on an earlier day still backs a reason today.
     //   target "person"  = the person being moved; target "station" = the Workstation they are moved to.
     //   Several questions in one need = ANY one of them counts. An empty list = always honest.
     reasons: [
@@ -118,7 +119,7 @@ window.SFL_CONTENT = {
     start_assign: "Start Assign",
     start_support: "Start Support",
     start_reflect: "Start Reflect",
-    confirm_order: "Confirm order",
+    confirm_order: "Confirm Order",
     understood: "Understood",
     confirm_assignments: "Confirm Assignments",
     complete_reflect: "Complete Reflect",
@@ -146,10 +147,10 @@ window.SFL_CONTENT = {
     explore_requests: "Explore Requests",
     ask_person_greeting: "Hello! I have time for one question today. What would you like to ask?",
     ask_no_points: "You have no Explore Requests left today.",
-    never_mind: "Actually, never mind.",     // closes a Researcher's question card
-    cancel_pill: "Cancel.",                  // closes a Workstation's question card and the reason card
+    never_mind: "Actually, never mind.",     // closes either question card in Explore
+    cancel_pill: "Cancel",                   // closes the reason card in Assign
     cancel: "Cancel",                        // the Restart popup
-    continue_pill: "Continue.",
+    continue_pill: "Continue",
     // Assign
     assign_title: "Assign {name} to the {station}?",
     assign_reason_sub: "Choose the reason for this move.",
@@ -161,7 +162,7 @@ window.SFL_CONTENT = {
     support_request_title: "Support Request",
     support_request_body: "{name} would like your help with their work.",
     answer_request: "Answer Request",
-    make_another_selection: "Make another selection",
+    make_another_selection: "Make Another Selection",
     support_outcome_title: "What happened",      // only used when rules > show_support_outcomes is true
     support_close: "Back to the map",            // only used when rules > show_support_outcomes is true
     // Reflect
@@ -190,11 +191,11 @@ window.SFL_CONTENT = {
     restart: "Restart",
     restart_title: "Restart the simulation?",
     restart_body: "Your answers will be lost.",
-    fullscreen: "Full screen",
-    exit_fullscreen: "Exit full screen",
+    fullscreen: "Full Screen",
+    exit_fullscreen: "Exit Full Screen",
     // End and results
     finish_title: "You have completed the simulation",
-    finish_button: "See your results",
+    finish_button: "See Your Results",
     results_title: "Your result",
     print: "Print",
     csv: "Download CSV",
@@ -212,12 +213,12 @@ window.SFL_CONTENT = {
     our_view: "Our view",
     not_answered: "Not answered",
     recommended_label: "Recommended",
-    reason_flag: "you had not asked what this reason relies on",
+    reason_flag: "you had not asked, on any day so far, what this reason relies on",
     reason_none: "no reason asked (not moved)",
     unused_points: "{n} Explore Request(s) not used",
     nothing_asked: "No questions asked",
     useful_yes: "worth asking",
-    useful_no: "not needed for today's decisions",
+    useful_no: "already clear from what was on screen",
     paired_yes: "working with {name}",
     paired_no: "should share a Workstation with {name}",
     cue_asked: "You asked {name} how they felt.",
@@ -268,7 +269,7 @@ window.SFL_CONTENT = {
     },
     complete: {
       heading: "Tutorial Complete",
-      body: "Some situations will point to one clear answer. Others will need your judgement, so use what you learn as you go.\n\nWhen you press the button below, the project and your timer will start."
+      body: "Some situations will point to one clear answer. Others will need your judgement, so use what you learn as you go.\n\nWhen you press \"Start Project\", the project and your timer will start."
     }
   },
 
@@ -374,6 +375,10 @@ window.SFL_CONTENT = {
       goal_heading: "Day 1 Goal",
       goal: "Place each Researcher where their skills and interests fit today's work best.",
       phases: ["explore", "assign", "support", "reflect"],
+      // THE STAGE INTRO CARDS ARE THE SAME ON EVERY DAY (the real game shows one fixed
+      // text per stage). If you change one of these four texts, change it in Day 1,
+      // Day 2 and Day 3 so all three stay identical. Nothing here may hint at the day's
+      // own twist; the day-specific steer belongs in that day's "goal".
       intros: {
         explore: "Use your Explore Requests to learn about the Researchers and Workstations that matter for today's goal.\n\nWho and what you can ask changes from day to day.",
         assign: "Here is where each Researcher is working now.\n\nMove anyone you think should work somewhere else, using your goal and what you learned in Explore.",
@@ -382,10 +387,14 @@ window.SFL_CONTENT = {
       },
       instructions: {   // shown in the left column and in Help
         explore: "Click a Researcher or Workstation with a badge to ask one question. Each question uses one Explore Request. Answers go into your Notes.",
-        assign: "Drag Researchers onto Workstations. Each Workstation holds up to two, or none. Give a reason for every move.",
+        assign: "Drag Researchers onto Workstations: up to two each, or none. Give a reason for every move. Everyone starts where their past experience put them; change anything today's work needs.",
         support: "Click a Researcher with an alert to open their request, then choose the best response.",
         reflect: "Choose how each Researcher would finish the sentence. If you have nothing to go on, choose \"I don't know\"."
       },
+      // Pair points are not scored on Day 1 (C2): neither person in a pair, and neither of
+      // their Workstations, can be asked today, so the candidate cannot know a pairing.
+      // Leave this out (or set it to true) on a day where pairs should count.
+      score_pairs: false,
       explore_points: 3,   // VERIFIED 3 / 3 / 2
       available: { people: ["ines", "priya"], stations: ["nursery", "outreach"] },   // 2 people + 2 Workstations, as photographed
       answers: {
@@ -394,7 +403,7 @@ window.SFL_CONTENT = {
             feeling: { text: "I'm confident today. I'd happily study the seedlings that survived, at the Nursery or out by the tide pools.",
                        useful: true, why: "Tells you Ines felt confident today, a cue for Reflect." },   // feeling answers are always useful: they give a mood cue
             working: { text: "I like people who test ideas quickly. I'm most useful where we study what the water and mud do to the roots.",
-                       useful: false, why: "Confirms what Ines's role already suggests; it does not change a placement." }
+                       useful: false, why: "Ines's role already told you where she fits; the request was better spent where the answer was open." }
           },
           priya: {
             feeling: { text: "Honestly, I'm worried. The island teams all tell different stories, and nobody is tracking them.",
@@ -406,15 +415,15 @@ window.SFL_CONTENT = {
         stations: {
           nursery: {
             work:  { text: "Researchers will count and measure the surviving seedlings in every row. It suits someone who knows how plants respond to their surroundings.",
-                     useful: false, why: "Confirms what Ines's role already suggests; it does not change a placement." },
-            learn: { text: "Seedlings closest to the new sea wall are dying fastest.",
-                     useful: false, why: "Interesting for the project, but it does not change where anyone should work." }
+                     useful: false, why: "The Nursery's description already told you this work; nothing here changes a placement." },
+            learn: { text: "Seedlings nearest the new sea wall die fastest. Finding out why suits someone who reads roots and mud.",
+                     useful: false, why: "Ines's role already pointed to roots and mud, so this only confirmed it; the request was better spent where the answer was open." }
           },
           outreach: {
             work:  { text: "Island teams send updates all day. The work is mostly logging them, chasing replies and keeping everyone informed.",
                      useful: true, why: "Shows Outreach needs an organiser, which points to Priya rather than a scientist." },
-            learn: { text: "The fishing cooperative has offered its boats for shore surveys this week.",
-                     useful: false, why: "Useful news, but it does not change where anyone should work." }
+            learn: { text: "Island teams' updates pile up faster than anyone logs them. Outreach needs someone who tracks and follows up.",
+                     useful: true, why: "Told you Outreach needs someone who tracks and follows up, which points to Priya rather than a scientist." }
           }
         }
       },
@@ -475,15 +484,19 @@ window.SFL_CONTENT = {
       goal_heading: "Day 2 Goal",
       goal: "Make sure Researchers who work better together are placed together.",
       phases: ["explore", "assign", "support", "reflect"],
+      // THE STAGE INTRO CARDS ARE THE SAME ON EVERY DAY (the real game shows one fixed
+      // text per stage). If you change one of these four texts, change it in Day 1,
+      // Day 2 and Day 3 so all three stay identical. Nothing here may hint at the day's
+      // own twist; the day-specific steer belongs in that day's "goal".
       intros: {
-        explore: "Use your Explore Requests to learn who works well with whom.\n\nToday you can ask different people and Workstations.",
-        assign: "Here is where each Researcher is working this morning.\n\nMove anyone who should work somewhere else, or next to someone else.",
-        support: "Researchers will ask for your advice again today.\n\nSome requests arrive together. You choose which to answer first.",
-        reflect: "Think about how each Researcher is feeling at the end of today."
+        explore: "Use your Explore Requests to learn about the Researchers and Workstations that matter for today's goal.\n\nWho and what you can ask changes from day to day.",
+        assign: "Here is where each Researcher is working now.\n\nMove anyone you think should work somewhere else, using your goal and what you learned in Explore.",
+        support: "During the day, Researchers will ask for your advice.\n\nChoose the response that helps them most. When more than one request is waiting, you decide which to answer first.",
+        reflect: "Before the day ends, think about how each Researcher is feeling. Use what they told you and how they came across today."
       },
       instructions: {
         explore: "Click a Researcher or Workstation with a badge to ask one question. Each question uses one Explore Request. Answers go into your Notes.",
-        assign: "Drag Researchers onto Workstations. Each Workstation holds up to two, or none. Give a reason for every move.",
+        assign: "Drag Researchers onto Workstations: up to two each, or none. Give a reason for every move. Everyone starts where their past experience put them; change anything today's work needs.",
         support: "Click a Researcher with an alert to open their request, then choose the best response.",
         reflect: "Choose how each Researcher would finish the sentence. If you have nothing to go on, choose \"I don't know\"."
       },
@@ -498,8 +511,8 @@ window.SFL_CONTENT = {
                        useful: true, why: "Shows Tomasz should be paired with someone who gathers data: Kofi." }
           },
           kofi: {
-            feeling: { text: "I'm fine, I suppose. The beach sensors are running, so today feels ordinary.",
-                       useful: true, why: "Tells you Kofi felt ordinary today, a cue for Reflect." },
+            feeling: { text: "I'm fine, I suppose; today feels ordinary. I'm most use where the sensor readings come in, next to someone who reads them.",
+                       useful: true, why: "Tells you Kofi felt ordinary today, a cue for Reflect, and that he belongs where the readings come in, beside Tomasz." },
             working: { text: "I'm happy building and running the nest sensors. I need a turtle expert beside me to turn the numbers into decisions.",
                        useful: true, why: "Shows Kofi needs a biologist beside him: Tomasz at Wildlife." }
           }
@@ -507,15 +520,15 @@ window.SFL_CONTENT = {
         stations: {
           tide: {
             work:  { text: "Researchers will take water samples along the shore. It needs steady hands more than a specialist.",
-                     useful: false, why: "Anyone can do this work, so it does not change a placement." },
-            learn: { text: "Salt levels near the nursery are back to normal, so water is now a less likely cause.",
-                     useful: false, why: "Good for the project, but it does not change where anyone should work." }
+                     useful: true, why: "Told you the Tide needs no specialist today, so nobody well placed elsewhere needs to move." },
+            learn: { text: "Salt near the nursery is normal again, so water looks less likely. The sampling left needs steady hands, not a specialist.",
+                     useful: true, why: "Told you water is a less likely cause and that the sampling needs no specialist, so nobody has to move to the Tide." }
           },
           wildlife: {
             work:  { text: "Researchers will read the nest sensor data and judge whether the eggs are at risk. It needs both a builder and a biologist.",
                      useful: true, why: "Shows Wildlife needs two people working together: Kofi and Tomasz." },
-            learn: { text: "Volunteers have already moved two nests away from the eroding dune.",
-                     useful: false, why: "Good news, but it does not change where anyone should work." }
+            learn: { text: "Volunteers moved two nests off the eroding dune. The nest sensors need someone to run them and someone to read them.",
+                     useful: true, why: "Told you the nest sensors need a builder and a reader together, which points to Kofi with Tomasz." }
           }
         }
       },
@@ -582,17 +595,22 @@ window.SFL_CONTENT = {
     {
       id: "day3", name: "Day 3",
       goal_heading: "Day 3 Goal",
-      goal: "Set the team up to turn what it has learned into a plan for the shore.",
+      // The Daily Goal carries the only day-specific steer (the stage intro cards must stay identical).
+      goal: "Turn what the team has learned into a plan for the shore. Some Workstations' work has changed today.",
       phases: ["explore", "assign", "support", "reflect"],
+      // THE STAGE INTRO CARDS ARE THE SAME ON EVERY DAY (the real game shows one fixed
+      // text per stage). If you change one of these four texts, change it in Day 1,
+      // Day 2 and Day 3 so all three stay identical. Nothing here may hint at the day's
+      // own twist; the day-specific steer belongs in that day's "goal".
       intros: {
-        explore: "You have fewer Explore Requests today. Some of the work has changed, so choose carefully.",
-        assign: "Here is where each Researcher is working this morning.\n\nMake any changes today's plan needs.",
-        support: "It is a busy day. Requests will arrive in pairs, and one Researcher may ask more than once.",
-        reflect: "Think about how each Researcher is feeling at the end of the project."
+        explore: "Use your Explore Requests to learn about the Researchers and Workstations that matter for today's goal.\n\nWho and what you can ask changes from day to day.",
+        assign: "Here is where each Researcher is working now.\n\nMove anyone you think should work somewhere else, using your goal and what you learned in Explore.",
+        support: "During the day, Researchers will ask for your advice.\n\nChoose the response that helps them most. When more than one request is waiting, you decide which to answer first.",
+        reflect: "Before the day ends, think about how each Researcher is feeling. Use what they told you and how they came across today."
       },
       instructions: {
         explore: "Click a Researcher or Workstation with a badge to ask one question. Each question uses one Explore Request. Answers go into your Notes.",
-        assign: "Drag Researchers onto Workstations. Each Workstation holds up to two, or none. Give a reason for every move.",
+        assign: "Drag Researchers onto Workstations: up to two each, or none. Give a reason for every move. Everyone starts where their past experience put them; change anything today's work needs.",
         support: "Click a Researcher with an alert to open their request, then choose the best response.",
         reflect: "Choose how each Researcher would finish the sentence. If you have nothing to go on, choose \"I don't know\"."
       },
@@ -607,31 +625,42 @@ window.SFL_CONTENT = {
                        useful: true, why: "Shows Kofi should work beside Tomasz at Wildlife." }
           },
           ines: {
-            feeling: { text: "I'm steady today. Nothing new has gone wrong, and I'm glad to keep working on the roots and the water.",
-                       useful: true, why: "Tells you Ines felt steady today, a cue for Reflect." },
+            feeling: { text: "I'm steady today. Nothing new has gone wrong, and I'd like to keep working at the Nursery or the tide pools.",
+                       useful: true, why: "Tells you Ines felt steady today, a cue for Reflect, and that she wants to stay at the Nursery or the Tide." },
             working: { text: "I'd like a quiet stretch to finish my soil tests, at the Nursery or by the tide pools.",
-                       useful: false, why: "Confirms what Ines's role already suggests; it does not change a placement." }
+                       useful: false, why: "Ines's role already told you where she fits; the request was better spent where the answer was open." }
           }
         },
         stations: {
           nursery: {
             work:  { text: "Researchers will choose new planting sites from the soil results. It needs someone trained to plan habitats.",
                      useful: true, why: "Shows the Nursery needs a habitat planner today: Priya belongs at the Nursery now, not at Outreach." },
-            learn: { text: "Seedlings planted in higher, firmer mud survived twice as often.",
-                     useful: false, why: "Good for the plan, but it does not change a placement." }
+            learn: { text: "Seedlings in higher, firmer mud survived twice as often. Today the Nursery picks new sites from that: habitat planning.",
+                     useful: true, why: "Told you the Nursery now plans new planting sites, which is habitat planning: Priya belongs there today, not at Outreach." }
           },
           wildlife: {
             work:  { text: "Researchers will design fencing to protect the nests. It needs an engineer working alongside someone who knows turtles.",
                      useful: true, why: "Shows Wildlife needs Kofi and Tomasz together." },
-            learn: { text: "Hatching season starts in ten days.",
-                     useful: false, why: "Sets the deadline, but it does not change a placement." }
+            learn: { text: "Hatching starts in ten days, so the fence must be designed now. It needs an engineer with a turtle expert beside him.",
+                     useful: true, why: "Told you the fence must be designed now, by an engineer with a turtle expert: Kofi with Tomasz." }
           }
         }
       },
-      // Day 3's own insight: Priya's best fit moves to the Nursery (shown by the Nursery "work" answer).
+      // Day 3's own insight: Priya's best fit moves to the Nursery.
+      // The change only counts against the candidate if today's Explore told them about it (C3).
+      //   good_stations_override   = where the person fits today, INSTEAD of their usual good_stations
+      //   override_revealed_by     = what the candidate must have asked TODAY for the change to apply.
+      //                              Same shape as a reason's "needs", but each entry names its own id.
+      //                              Leave it out and the change always applies.
+      //   placement_why_override   = the results explanation when the change was revealed
+      //   placement_why_unrevealed = the results explanation when it was not (no second penalty)
       good_stations_override: { priya: ["nursery"] },
+      override_revealed_by:   { priya: [{ target: "station", id: "nursery", questions: ["work", "learn"] }] },
       placement_why_override: {   // shown in the results instead of the person's usual placement_why
-        priya: "Today the Nursery chooses new planting sites from the soil results, which is habitat planning. Priya fits the Nursery today; Outreach no longer needs her most."
+        priya: "Today the Nursery chooses new planting sites from the soil results, which is habitat planning, so Priya fits the Nursery and Outreach no longer needs her most. You asked the Nursery today, so you were told this before you decided."
+      },
+      placement_why_unrevealed: {   // shown when nothing the candidate asked today revealed the change
+        priya: "Nothing you asked today showed that the Nursery's work had changed, so Outreach was right on what you knew, and this row is marked against Outreach. Had you asked the Nursery what work is planned, you would have learned that today it chooses new planting sites \u2014 habitat planning \u2014 and that Priya fits there."
       },
       // Two start in the right place (Kofi, Tomasz), two do not (Priya, Ines). Repeating Day 2's answer is not enough.
       start_assignment: { nursery: [], tide: ["kofi"], outreach: ["priya"], wildlife: ["tomasz", "ines"] },
@@ -700,7 +729,7 @@ window.SFL_CONTENT = {
       ],
       reflect: {
         heading: "How would each Researcher finish this sentence?",
-        prompt: "At the end of the project, I feel…",
+        prompt: "At the end of today, I feel…",
         options: [ { id: "low", label: "Stuck" }, { id: "mid", label: "Neutral" }, { id: "high", label: "Motivated" } ],   // Day 3 words: our own (SQ25)
         moods: { ines: "mid", tomasz: "mid", priya: "low", kofi: "high" },
         why: {
@@ -715,18 +744,26 @@ window.SFL_CONTENT = {
 };
 
 /* ==========================================================================
-   WORKED MARKING EXAMPLE (Day 2) — how the rules above turn choices into points.
+   WORKED MARKING EXAMPLE (Day 2) - how the rules above turn choices into points.
    This exact run is checked by tools/test-marking.js.
 
    EXPLORE (3 requests). The candidate asks:
-     Tomasz "How are you feeling…"   useful: true (a feeling answer)  -> 1
-     Kofi   "How are you feeling…"   useful: true (a feeling answer)  -> 1
-     Tide   "What work is planned…"  useful: false                    -> 0
-     Explore = 2 out of 3.
+     Tomasz "How are you feeling..."   useful: true                    -> 1
+     Kofi   "How are you feeling..."   useful: true                    -> 1
+     Tide   "What work is planned..."  useful: true                    -> 1
+     Explore = 3 out of 3.
+     (Every answer on Day 2 is worth asking. The four answers in the whole file
+      that are not are Day 1 Ines "How do you like to work", Day 1 Nursery
+      "What work is planned", Day 1 Nursery "What have we learned" and Day 3
+      Ines "How do you like to work": each one only repeats what the role text
+      or the Workstation's description already said on screen.)
 
-   ASSIGN. Day 2 starts: Nursery Priya · Tide Ines · Outreach Kofi · Wildlife Tomasz.
+   ASSIGN. Day 2 starts: Nursery Priya - Tide Ines - Outreach Kofi - Wildlife Tomasz.
    The candidate moves:
-     Kofi   -> Wildlife, reason "Researcher assistance" (needs Kofi "working", only "feeling" was asked: NOT honest)
+     Kofi   -> Wildlife, reason "Researcher assistance"
+              (needs Kofi "How do you like to work"; on Day 1 nothing was asked and
+               today only "How are you feeling", so it is NOT honest: the results
+               say "you had not asked, on any day so far, what this reason relies on")
      Priya  -> Outreach, reason "Workstation coverage"  (needs nothing: honest)
      Ines and Tomasz are left where they are (already well placed, so no reason is asked).
    Points (placement 1 + pair 0.5 if they share a GOOD Workstation with their pair + reason 0.5):
@@ -735,6 +772,8 @@ window.SFL_CONTENT = {
      Kofi   Wildlife 1 + shares it with Tomasz 0.5 + not honest 0            = 1.5 of 2
      Priya  Outreach 1 + no pair_with + honest 0.5                           = 1.5 of 1.5
      Assign = 6.5 out of 7. (One pair, Tomasz and Kofi, earns the pair bonus for both.)
+     Day 1 is different: it has score_pairs: false, so no pair bonus is scored at
+     all and Day 1's Assign is out of 6, not 7. Day 3 is out of 7 like Day 2.
 
    SUPPORT. The recommended option on all four requests: 4 out of 4.
 
@@ -745,4 +784,10 @@ window.SFL_CONTENT = {
      Ines:   no cue (not askable, her request reveals nothing). Answer Neutral.
              Right mood, but she gave no sign of it; "I don't know" was expected -> 0 of 1
      Reflect = 2 out of 4.
+
+   THE DAY 3 CHANGE, IN ONE LINE. On Day 3 Priya's best fit moves to the Nursery,
+   but only for a candidate who asked the Nursery something today. Ask it and
+   leaving her at Outreach scores 0; do not ask it and Outreach still scores 1,
+   and the results say what asking would have told them. Not asking the Nursery
+   never costs the placement point: on what the candidate knew, Outreach was right.
    ========================================================================== */

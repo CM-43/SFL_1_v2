@@ -216,22 +216,35 @@
   function render() {
     if (!state) return;
     document.body.classList.toggle('scrolls', state.phase === 'results');
-    var html;
-    if (state.phase === 'login') html = loginHTML();
-    else if (state.phase === 'start') html = startHTML();
-    else if (state.phase === 'game') html = gameHTML();
-    else html = resultsHTML();
-    /* A card or popup plays its opening animation only when it first opens.
-       Clicking inside it redraws the screen, and without this it would fade
-       in again and the screen would appear to flash. */
+    /* Every click redraws the whole screen. Anything that is only being
+       redrawn must not play its opening animation again, or the screen
+       appears to flash and cards look as though they close and reopen.
+       This is decided BEFORE the screen is drawn, so the very first redraw
+       after a card opens is already steady. */
     var key = modalKey(state.ui.modal);
     steadyModal = !!key && key === lastModalKey;
     lastModalKey = key;
     var dkey = modalKey(state.ui.dialog);
     steadyDialog = !!dkey && dkey === lastDialogKey;
     lastDialogKey = dkey;
+    var ckey = state.phase === 'game' ? cardScreenKey() : null;
+    steadyCard = !!ckey && ckey === lastCardKey;
+    lastCardKey = ckey;
+    var tkey = state.ui.warningOpen || null;
+    steadyToast = tkey !== null && tkey === lastToastKey;
+    lastToastKey = tkey;
+    var html;
+    if (state.phase === 'login') html = loginHTML();
+    else if (state.phase === 'start') html = startHTML();
+    else if (state.phase === 'game') html = gameHTML();
+    else html = resultsHTML();
     html += dialogHTML();
     app.innerHTML = html;
+    /* Two screens hold themselves at a fixed height, worked out from what is
+       on them, so that nothing resizes as the candidate works. Both are done
+       here, before the browser paints, so nothing is ever seen to jump. */
+    applySeriesHeight();
+    sizeRankCards();
     paintTimer();
     if (state.phase === 'login') {
       var u = byId('u');
@@ -240,9 +253,20 @@
   }
 
   var lastModalKey = null, steadyModal = false, lastDialogKey = null, steadyDialog = false;
+  var lastCardKey = null, steadyCard = false, lastToastKey = null, steadyToast = false;
   function modalKey(m) {
     if (!m) return null;
     return [m.type, m.target || '', m.id || '', m.person || '', m.item || ''].join('|');
+  }
+  /* Which card screen is showing. It changes only when the candidate moves
+     to another screen, never when the same screen is redrawn. */
+  function cardScreenKey() {
+    var s = state.step;
+    if (!s) return null;
+    if (s.kind === 'tutorial') return 'tutorial|' + s.index;
+    if (s.kind === 'onboarding') return 'onboarding|' + s.screen;
+    if (s.kind === 'day') return 'day|' + s.day + '|' + s.phase + '|' + s.screen;
+    return null;
   }
 
   /* ---- LOGIN — Sea Wolf's markup, copied (D16). Only the heading words come
@@ -319,8 +343,9 @@
       '<div class="g-top">' + progressHTML() + toolsHTML() + '</div>' +
       (onMap
         ? '<aside class="g-left">' + leftHTML() + '</aside><main class="g-stage">' + stageHTML() + '</main>'
-        : '<main class="g-body">' + mapBackdropHTML() + cardScreenHTML() + '</main>') +
-      (onMap && state.step.phase === 'explore' ? '' : warningHTML()) +
+        : '<main class="g-body' + (steadyCard ? ' is-steady' : '') + '">' + mapBackdropHTML() + cardScreenHTML() + '</main>') +
+      /* Explore and Reflect draw the toast inside the stage themselves. */
+      (onMap && (state.step.phase === 'explore' || state.step.phase === 'reflect') ? '' : warningHTML()) +
     '</div>';
   }
 
@@ -345,7 +370,7 @@
       '<button class="btn-quiet" data-act="restart">' + esc(L('restart')) + '</button>' +
       (fullscreenAvailable()
         ? '<button class="btn-fullscreen" data-act="fullscreen" title="' + esc(isBig ? L('exit_fullscreen') : L('fullscreen')) + '">' +
-          (isBig ? '✕' : '⛶') + '</button>' : '') +
+          (isBig ? shrinkIconSVG() : '⛶') + '</button>' : '') +
     '</div>';
   }
 
@@ -370,7 +395,7 @@
   function warningHTML(where) {
     var n = state.ui.warningOpen;
     if (!n) return '';
-    return '<div class="toast' + (where ? ' ' + where : '') + '" role="status">' + infoIconSVG() +
+    return '<div class="toast' + (where ? ' ' + where : '') + (steadyToast ? ' is-steady' : '') + '" role="status">' + infoIconSVG() +
       '<div class="toast-text"><b>' + esc(L('time_warning_title')) + '</b><span>' +
       esc(L(n === 1 ? 'time_warning_body_one' : 'time_warning_body', { n: n })) + '</span></div>' +
       '<button class="toast-x" data-act="warning-close" aria-label="' + esc(L('close')) + '">×</button></div>';
@@ -399,6 +424,12 @@
     return spent
       ? '<svg class="coin is-spent" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/></svg>'
       : '<svg class="coin" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.5"/><circle class="coin-in" cx="10" cy="10" r="5"/></svg>';
+  }
+  /* Leaving full screen: two arrows pointing inward (item 18). An "X" read
+     as "close the simulation". */
+  function shrinkIconSVG() {
+    return '<svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">' +
+      '<path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/></svg>';
   }
   function infoIconSVG() {
     return '<svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7.5v.5"/></svg>';
@@ -462,16 +493,19 @@
   /* ====================================================================== *
    * CARD SCREENS — tutorial, onboarding, day goal, stage intros, Assign done
    * ====================================================================== */
+  function tutorialCardInner(index) {
+    var c = content(), key = TUTORIAL[index], t = c.tutorial[key];
+    var last = index === TUTORIAL.length - 1;
+    return '<section class="gcard is-tutorial">' +
+      '<div class="tut-grid"><div class="tut-text"><h1>' + esc(t.heading) + '</h1><div class="gc-body">' + paras(t.body) + '</div></div>' +
+      '<div class="tut-art">' + tutorialArt(key) + '</div></div>' +
+      '<div class="gc-actions is-right"><button class="btn" data-act="card-next">' + esc(L(last ? 'start_project' : 'continue')) + '</button></div>' +
+    '</section>';
+  }
   function cardScreenHTML() {
     var s = state.step, c = content();
     if (s.kind === 'tutorial') {
-      var key = TUTORIAL[s.index], t = c.tutorial[key];
-      var last = s.index === TUTORIAL.length - 1;
-      return '<div class="card-wrap"><section class="gcard is-tutorial">' +
-        '<div class="tut-grid"><div class="tut-text"><h1>' + esc(t.heading) + '</h1><div class="gc-body">' + paras(t.body) + '</div></div>' +
-        '<div class="tut-art">' + tutorialArt(key) + '</div></div>' +
-        '<div class="gc-actions is-right"><button class="btn" data-act="card-next">' + esc(L(last ? 'start_project' : 'continue')) + '</button></div>' +
-      '</section></div>';
+      return '<div class="card-wrap">' + tutorialCardInner(s.index) + '</div>';
     }
     if (s.kind === 'onboarding') {
       var ob = c.onboarding;
@@ -493,11 +527,72 @@
     if (s.screen === 'intro') return simpleCard(L('kicker_day', { n: n, day: n }), L('phase_' + s.phase), day.intros[s.phase], L('start_' + s.phase));
     return simpleCard(L('kicker_day', { n: n, day: n }), L('assign_complete_title'), L('assign_complete_body'), L('continue'));
   }
-  function simpleCard(kicker, heading, body, button) {
-    return '<div class="card-wrap"><section class="gcard">' +
+  function simpleCardInner(kicker, heading, body, button) {
+    return '<section class="gcard">' +
       (kicker ? '<div class="gc-kicker">' + esc(kicker) + '</div>' : '') +
       '<h1>' + esc(heading) + '</h1><div class="gc-body">' + paras(body) + '</div>' +
-      '<div class="gc-actions"><button class="btn" data-act="card-next">' + esc(button) + '</button></div></section></div>';
+      '<div class="gc-actions"><button class="btn" data-act="card-next">' + esc(button) + '</button></div></section>';
+  }
+  function simpleCard(kicker, heading, body, button) {
+    return '<div class="card-wrap">' + simpleCardInner(kicker, heading, body, button) + '</div>';
+  }
+
+  /* A box off the side of the page, the same width as the place being
+     measured, used to find out how tall something would be before it is
+     drawn. It hangs off <body>, not off the screen it belongs to: a card
+     that is still playing its opening animation is very slightly scaled,
+     and anything measured inside it would come out about 1.5% too small.
+     Opening animations are switched off inside the box (css/app.css). */
+  function measureHost(width, html) {
+    var host = document.createElement('div');
+    host.className = 'measure-host';
+    host.setAttribute('aria-hidden', 'true');
+    host.style.width = width + 'px';
+    host.innerHTML = html;
+    document.body.appendChild(host);
+    return host;
+  }
+
+  /* ---- ITEM 9: ONE HEIGHT FOR A SERIES OF CARDS ------------------------
+     The five tutorial cards, and a day's four stage-intro cards, are read
+     one after another. Each used to be exactly as tall as its own words, so
+     the card nudged up or down on every Continue. Every card in a series is
+     now held at the height of the tallest card in that series, measured for
+     the window as it is now. The Day Goal card and the Assign Complete card
+     are screens of their own and keep their own heights. */
+  function seriesCards() {
+    var s = state.step;
+    if (!s) return [];
+    if (s.kind === 'tutorial') {
+      return TUTORIAL.map(function (key, i) { return tutorialCardInner(i); });
+    }
+    if (s.kind === 'day' && s.screen === 'intro') {
+      var day = currentDay(), n = s.day + 1;
+      return day.phases.map(function (ph) {
+        return simpleCardInner(L('kicker_day', { n: n, day: n }), L('phase_' + ph), day.intros[ph], L('start_' + ph));
+      });
+    }
+    return [];
+  }
+  function applySeriesHeight() {
+    if (state.phase !== 'game') return;
+    var wrap = app.querySelector('.card-wrap');
+    if (!wrap) return;
+    var card = wrap.querySelector('.gcard');
+    if (!card) return;
+    var list = seriesCards();
+    if (list.length < 2) return;
+    var cs = window.getComputedStyle(wrap);
+    var innerW = wrap.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    var innerH = wrap.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    if (!(innerW > 0) || !(innerH > 0)) return;
+    var host = measureHost(innerW, list.join(''));
+    var tallest = 0;
+    Array.prototype.forEach.call(host.querySelectorAll('.gcard'), function (el) {
+      tallest = Math.max(tallest, el.getBoundingClientRect().height);
+    });
+    host.parentNode.removeChild(host);
+    if (tallest > 0) card.style.minHeight = Math.min(Math.ceil(tallest), Math.floor(innerH)) + 'px';
   }
 
   /* Small illustrations for the tutorial [p2–p5]: a grey mock screen with an
@@ -526,16 +621,49 @@
   }
 
   /* ---- ONBOARDING: put the questions into the slots [p7–p8] ------------- */
+  /* One question card. slot === null draws it as it sits in the pool;
+     a number draws it in that slot, with the up and down arrows. */
+  function rankCardHTML(q, slot, sel, last) {
+    return '<div class="rank-card' + (sel === q.id ? ' is-selected' : '') + '" data-drag="rank" data-act="rank-pick" data-id="' + esc(q.id) + '">' +
+      '<span class="rank-grip" aria-hidden="true"></span><span class="rank-text">' + textToHtml(q.text) + '</span>' +
+      (slot === null ? '' : '<span class="rank-arrows">' +
+        '<button class="arrow-btn" data-act="rank-up" data-id="' + slot + '" title="' + esc(L('move_up')) + '" aria-label="' + esc(L('move_up')) + '"' + (slot === 0 ? ' disabled' : '') + '>▲</button>' +
+        '<button class="arrow-btn" data-act="rank-down" data-id="' + slot + '" title="' + esc(L('move_down')) + '" aria-label="' + esc(L('move_down')) + '"' + (slot === last ? ' disabled' : '') + '>▼</button>' +
+      '</span>') + '</div>';
+  }
+  /* ITEM 7: the card must not change by a pixel from the first drag to
+     Confirm Order. The tallest question is measured once per draw at the
+     width a card has in the pool, and again at the width it has in a slot;
+     every card, ghost and empty slot is then held at that height. Both are
+     measured away from the screen, so what the candidate sees never moves. */
+  function measureRankHeight(width, slot) {
+    var host = measureHost(width, content().onboarding.questions.map(function (q) {
+      return rankCardHTML(q, slot, null, 99);
+    }).join(''));
+    var h = 0;
+    Array.prototype.forEach.call(host.querySelectorAll('.rank-card'), function (el) {
+      h = Math.max(h, el.getBoundingClientRect().height);
+    });
+    host.parentNode.removeChild(host);
+    return Math.ceil(h);
+  }
+  function sizeRankCards() {
+    if (state.phase !== 'game') return;
+    var layout = app.querySelector('.rank-layout');
+    if (!layout) return;
+    var poolCard = layout.querySelector('.rank-pool .rank-card');
+    var slotCell = layout.querySelector('.rank-slot .rank-card, .rank-slot .slot-empty');
+    if (!poolCard || !slotCell) return;
+    var poolW = poolCard.getBoundingClientRect().width;
+    var slotW = slotCell.getBoundingClientRect().width;
+    if (!(poolW > 0) || !(slotW > 0)) return;
+    layout.style.setProperty('--rk-pool-h', measureRankHeight(poolW, null) + 'px');
+    layout.style.setProperty('--rk-slot-h', measureRankHeight(slotW, 1) + 'px');
+  }
+
   function rankHTML() {
     var ob = content().onboarding, order = state.run.onboarding.order, sel = state.ui.selected;
-    function card(q, slot) {
-      return '<div class="rank-card' + (sel === q.id ? ' is-selected' : '') + '" data-drag="rank" data-act="rank-pick" data-id="' + esc(q.id) + '">' +
-        '<span class="rank-grip" aria-hidden="true"></span><span class="rank-text">' + textToHtml(q.text) + '</span>' +
-        (slot === null ? '' : '<span class="rank-arrows">' +
-          '<button class="arrow-btn" data-act="rank-up" data-id="' + slot + '" title="' + esc(L('move_up')) + '" aria-label="' + esc(L('move_up')) + '"' + (slot === 0 ? ' disabled' : '') + '>▲</button>' +
-          '<button class="arrow-btn" data-act="rank-down" data-id="' + slot + '" title="' + esc(L('move_down')) + '" aria-label="' + esc(L('move_down')) + '"' + (slot === order.length - 1 ? ' disabled' : '') + '>▼</button>' +
-        '</span>') + '</div>';
-    }
+    function card(q, slot) { return rankCardHTML(q, slot, sel, order.length - 1); }
     var pool = ob.questions.map(function (q) {
       return order.indexOf(q.id) >= 0 ? '<div class="rank-card is-ghost" aria-hidden="true"></div>' : card(q, null);
     }).join('');
@@ -566,9 +694,11 @@
     var pills = '<div class="stage-pills">' +
       (notesOk ? '<button class="pill-btn' + (state.ui.panel === 'notes' ? ' is-on' : '') + '" data-act="panel" data-id="notes">' + notesIconSVG() + esc(L('notes')) + '</button>' : '') +
       helpPillHTML() + '</div>';
-    return '<div class="stage-area' + (ph === 'reflect' ? ' is-reflect' : '') + '" id="stage">' +
+    return '<div class="stage-area' + (ph === 'reflect' ? ' is-reflect' : '') +
+      (state.ui.modal ? ' has-card' : '') + '" id="stage">' +
       (ph === 'reflect' ? mapBackdropHTML() + reflectHTML() : mapHTML()) +
       (ph === 'explore' ? coinsHTML() + warningHTML('in-stage') : '') +
+      (ph === 'reflect' ? warningHTML('in-reflect') : '') +
       pills + stageButtonHTML() + panelHTML() +
       (state.ui.hint ? '<div class="map-hint" role="status">' + esc(state.ui.hint) + '</div>' : '') +
       mapCardHTML() +
@@ -817,7 +947,8 @@
           pills += pill('ask-q', q.id, coinSVG(false) + '<span>' + esc(q.label) + '</span>', { disabled: left <= 0 });
         });
         if (left <= 0) pills += '<p class="qc-note">' + esc(L('ask_no_points')) + '</p>';
-        pills += pill('card-close', null, esc(L(isP ? 'never_mind' : 'cancel_pill')), { quiet: true });
+        /* Both ask cards close with the same pill (item 19). */
+        pills += pill('card-close', null, esc(L('never_mind')), { quiet: true });
       }
       inner = '<div class="qc-who">' + (isP ? avatarHTML(who, 'xl') : stationDiscHTML(who, 'xl')) +
         '<h2>' + esc(who.name) + '</h2><p class="qc-text">' + text + '</p></div>' +
@@ -854,7 +985,7 @@
       } else {
         right = qi.options.map(function (o) { return pill('support-choose', o.id, textToHtml(o.text)); }).join('');
       }
-      cls += ' is-question';
+      cls += ' is-question' + (qi.options.length === 2 ? ' is-two' : '');
       inner = '<div class="qc-who">' + avatarHTML(qp, 'xl', stationBadge(M.currentStation(day, dr, qp.id))) +
         '<h2>' + esc(qp.name) + '</h2><div class="qc-text">' + paras(qi.message) + '</div></div>' +
         '<div class="qc-pills">' + right + '</div>';
@@ -1432,12 +1563,24 @@
         var reasonText = it.reason
           ? esc(it.reason.label) + (it.honest ? '' : ' <span class="flag">(' + esc(L('reason_flag')) + ')</span>')
           : '<span class="muted">' + esc(L('reason_none')) + '</span>';
-        var pair = it.pairWith.length
+        /* No pairing line on a day that does not score pairs (score_pairs: false):
+           the candidate could not have known the pairing, so nothing is said about it. */
+        var pair = (it.pairsScored !== false && it.pairWith.length)
           ? ' · ' + (it.paired ? esc(L('paired_yes', { name: names(it.partners) })) : '<span class="flag">' + esc(L('paired_no', { name: names(it.pairWith) })) + '</span>')
           : '';
+        /* Where a day moves someone's best fit, the explanation depends on whether
+           today's Explore revealed the change (see marking.js > overrideApplies). */
+        var placementWhy = it.person.placement_why;
+        if (it.hasOverride) {
+          placementWhy = (it.overrideApplied
+            ? (day.placement_why_override || {})[it.person.id]
+            : (day.placement_why_unrevealed || {})[it.person.id]) || placementWhy;
+        } else if ((day.placement_why_override || {})[it.person.id]) {
+          placementWhy = day.placement_why_override[it.person.id];
+        }
         html += row(it.points, it.of, esc(it.person.name) + ' → ' + esc(it.station ? it.station.name : L('not_placed')),
           esc(L('your_answer')) + ': ' + reasonText + ' · ' + esc(L('our_view')) + ': <b>' + esc(stationNames(it.goodStations)) + '</b>' + pair,
-          textToHtml((day.placement_why_override || {})[it.person.id] || it.person.placement_why), it.late);
+          textToHtml(placementWhy), it.late);
       });
     }
     if (dres.support) {
@@ -1483,7 +1626,7 @@
       if (d.assign) d.assign.items.forEach(function (it) {
         rows.push([day.name + ' ' + L('phase_assign'), it.person.name,
           (it.station ? it.station.name : L('not_placed')) + (it.reason ? ' (' + it.reason.label + (it.honest ? '' : '; ' + L('reason_flag')) + ')' : ''),
-          stationNames(it.goodStations) + (it.pairWith.length ? ' + ' + names(it.pairWith) : ''), it.points, it.of, it.late ? yes : '']);
+          stationNames(it.goodStations) + ((it.pairsScored !== false && it.pairWith.length) ? ' + ' + names(it.pairWith) : ''), it.points, it.of, it.late ? yes : '']);
       });
       if (d.support) d.support.items.forEach(function (it) {
         rows.push([day.name + ' ' + L('phase_support'), (it.person ? it.person.name + ': ' : '') + it.item.message, it.chosen ? it.chosen.text : '', it.recommended.text, it.points, it.of, it.late ? yes : '']);

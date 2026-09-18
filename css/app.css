@@ -3,6 +3,43 @@
    Loaded after css/shared-styles.css (the house file, used unchanged).
    ========================================================================== */
 
+/* ==== 0. HOW SIZES GROW WITH THE WINDOW (round 4) =========================
+   The house file is never edited; its variables are overridden here.
+
+   Every size below is written so that it is EXACTLY today's size in a
+   900-wide window, grows evenly as the window widens, and stops at its cap
+   in a 1920-wide window:  clamp(today, <slope>vw + <offset>px, cap).
+
+   --u is the general step for small sizes: 10px at 900 wide, 14px at 1920
+   (1.4x). A size of 6px today is therefore written calc(var(--u) * 0.6).   */
+:root {
+  /* Base text: 14px at 900, about 16.5px at 1400, 19px at 1920. Everything
+     written as max(13px, 0.86em) follows it by itself. */
+  --font: clamp(14px, 0.5vw + 9.5px, 19px);
+  --u:    clamp(10px, 0.3922vw + 6.4706px, 14px);
+
+  /* Cards */
+  --card-w:   clamp(620px,  25.49vw + 390.6px,  880px);  /*  620 ->  880 */
+  --wide-col: clamp(860px,  33.33vw + 560.0px, 1200px);  /*  860 -> 1200 */
+  --wide-w:   clamp(1040px, 35.29vw + 722.4px, 1400px);  /* 1040 -> 1400 */
+  --q-w:      clamp(780px,  29.41vw + 515.3px, 1080px);  /*  780 -> 1080 */
+  --q-wide:   clamp(860px,  31.37vw + 577.6px, 1180px);  /*  860 -> 1180 */
+  --q-small:  clamp(440px,  15.69vw + 298.8px,  600px);  /*  440 ->  600 */
+
+  /* The map */
+  --av:      clamp(40px, 1.3725vw + 27.65px, 54px);  /* a person's circle */
+  --st-av:   var(--av);                              /* ...on a Workstation */
+  --tok-w:   clamp(60px, 1.9608vw + 42.35px, 80px);  /* the person's column */
+  --tok-name-fs: clamp(12px, 0.3922vw + 8.47px, 16px);
+  --tok-name-lh: calc(var(--tok-name-fs) + 4px);
+
+  /* Reflect and the ranking screen */
+  --radio:    clamp(20px, 0.7843vw + 12.94px, 28px);
+  --rk-label: clamp(120px, 3.1373vw + 91.76px, 152px); /* the "First Question" column, wide
+                                                          enough for the longest slot name
+                                                          on one line at every size */
+}
+
 /* ==== 1. COPIED EXACTLY FROM SEA WOLF — the login screen (D16) ============
    Sea Wolf v13 house-styles.css, "Login screen" section, unchanged. */
 .centre-screen {
@@ -176,6 +213,11 @@
   font-family: inherit;
 }
 .btn-fullscreen:hover { background: rgba(255,255,255,0.09); }
+/* Round 4 item 18: the two arrows pointing inward that replace the "X". */
+.tool-icon {
+  width: 16px; height: 16px; display: block; margin: 0 auto;
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
 .demo-note {
   display: flex;
   align-items: center;
@@ -200,7 +242,7 @@
      timer top-left | progress line top-centre | Restart and full screen top-right
      left column    | stage area (map or Reflect table)                        */
 .game {
-  --left: clamp(200px, 20vw, 290px);
+  --left: clamp(200px, 20vw, 340px);
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
@@ -246,7 +288,7 @@
 .progress { list-style: none; margin: 0 auto; padding: 0; display: flex; justify-content: center; }
 .pg-step {
   position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px;
-  width: clamp(84px, 7.4vw, 104px); font-size: 12px; color: var(--on-dark-muted); text-align: center;
+  width: clamp(84px, 7.4vw, 130px); font-size: 12px; color: var(--on-dark-muted); text-align: center;
 }
 .pg-step + .pg-step::before {
   content: ""; position: absolute; top: 6px; right: 50%; width: 100%; height: 2px; background: var(--box-border); z-index: 0;
@@ -289,6 +331,12 @@
   animation: modal-rise 160ms ease;
 }
 .toast.in-stage { top: calc(var(--space-3) + 42px); right: var(--space-3); }
+/* Round 4 item 11: a toast that is only being redrawn does not play its
+   opening animation again (it looked as though it kept reopening). */
+.toast.is-steady { animation: none; }
+/* Round 4 item 17: on Reflect the toast sits at the bottom-right of the
+   stage, above the "Complete Reflect" button, so it never covers the table. */
+.toast.in-reflect { top: auto; bottom: calc(var(--space-3) + 52px); right: var(--space-3); }
 .toast-text { flex: 1 1 auto; display: flex; flex-direction: column; font-size: max(13px, 0.86em); line-height: 1.4; }
 .toast-x, .sp-close {
   flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; border: 0; background: var(--surface-sunken);
@@ -307,20 +355,24 @@
 .gcard {
   background: var(--surface); color: var(--on-light); border-radius: 16px;
   box-shadow: 0 16px 40px rgba(0,0,0,0.35);
-  width: min(620px, 100%); max-height: 100%; overflow-y: auto;
-  padding: var(--space-6) 30px 22px; display: flex; flex-direction: column;
+  width: min(var(--card-w), 100%); max-height: 100%; overflow-y: auto;
+  padding: var(--space-6) calc(var(--u) * 3) 22px; display: flex; flex-direction: column;
   animation: modal-rise 160ms cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 .gcard h1 { font-size: clamp(20px, 2vw, 28px); margin-bottom: var(--space-3); text-align: center; }
 .gc-kicker { text-align: center; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-light-muted); margin-bottom: 4px; }
 .gc-body { line-height: 1.6; }
 .gc-body p { margin: 0 0 var(--space-3); }
-.gc-actions { display: flex; justify-content: center; padding-top: var(--space-3); flex: 0 0 auto; }
+/* Round 4 item 9: when a card is held at the height of the tallest card in
+   its series, the text stays centred and the button stays at the bottom. */
+.gcard > .gc-body { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; }
+.gcard > .tut-grid { flex: 1 1 auto; align-content: center; }
+.gc-actions { display: flex; justify-content: center; padding-top: var(--space-3); flex: 0 0 auto; margin-top: auto; }
 .gc-actions.is-right { justify-content: flex-end; }
 .gc-actions.is-split { justify-content: space-between; align-items: center; }
 .gc-actions .pill-btn { box-shadow: none; }
 .side-panel.is-rank { left: var(--space-4); top: var(--space-4); bottom: var(--space-4); z-index: 5; }
-.gcard.is-tutorial { width: min(860px, 100%); }
+.gcard.is-tutorial { width: min(var(--wide-col), 100%); }
 .gcard.is-tutorial h1 { text-align: left; }
 .tut-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: var(--space-6); align-items: center; }
 .tut-art { background: var(--surface-sunken); border-radius: var(--radius); padding: var(--space-4); }
@@ -335,27 +387,40 @@
 .art-land { fill: #b9d4bf; stroke: #6f9a7c; stroke-width: 2; }
 .art-ground { stroke: #9aa4b5; stroke-width: 2; }
 
-/* Wide cards (ranking, brief): the content column is centred, 860px at most */
-.gcard.is-wide { width: min(1040px, 100%); padding: var(--space-5) 0 var(--space-4); overflow: hidden; }
+/* Round 4 item 10: every click redraws the whole screen. A card that is only
+   being redrawn must not play its opening animation again. */
+.g-body.is-steady .gcard { animation: none; }
+
+/* Wide cards (ranking, brief): the content column is centred, --wide-col at most */
+.gcard.is-wide { width: min(var(--wide-w), 100%); padding: var(--space-5) 0 var(--space-4); overflow: hidden; }
 .gcard.is-wide h1 { text-align: left; margin-bottom: var(--space-2); }
 .gc-scroll {
   flex: 1 1 auto; min-height: 0; overflow-y: auto;
-  padding: 0 max(24px, calc((100% - 860px) / 2));
+  padding: 0 max(24px, calc((100% - var(--wide-col)) / 2));
 }
-.gcard.is-wide .gc-actions { padding: var(--space-3) max(24px, calc((100% - 860px) / 2)) 0; }
+.gcard.is-wide .gc-actions { padding: var(--space-3) max(24px, calc((100% - var(--wide-col)) / 2)) 0; }
 .gc-lede { margin: 0 0 var(--space-4); line-height: 1.5; }
 
 /* Onboarding ranking [p7–p8] */
 .rank-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-5); align-items: start; }
 .rank-side { display: flex; flex-direction: column; gap: var(--space-2); }
 .rank-hint { margin: 0; font-size: max(12px, 0.8em); }
+/* Round 4 item 7: nothing on this card changes size during the exercise.
+   js/app.js measures the tallest question at the pool's card width and at a
+   slot's card width once per draw, and writes them into --rk-pool-h and
+   --rk-slot-h. Every pool card, ghost card, slot card and empty slot is
+   then held at that height, so the pool keeps its full 2x2 size as it
+   empties and the card's outline never moves. */
 .rank-pool {
   display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2);
   background: var(--surface-sunken); border: 2px solid transparent; border-radius: var(--radius); padding: var(--space-2);
 }
+.rank-pool .rank-card { height: var(--rk-pool-h, 50px); }
+.rank-slot .rank-card, .slot-empty { height: var(--rk-slot-h, 48px); }
+.rank-slot { height: calc(var(--rk-slot-h, 48px) + 8px); }
 .rank-pool.is-over { border-color: var(--accent); background: var(--accent-soft); }
 .rank-card {
-  display: flex; align-items: center; gap: var(--space-2); min-height: 50px;
+  display: flex; align-items: center; gap: var(--space-2);
   background: var(--surface-plain); border: 1px solid var(--surface-line); border-radius: var(--radius-small);
   padding: 5px 8px; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
   font-size: max(13px, 0.86em); line-height: 1.3;
@@ -368,15 +433,15 @@
 .rank-text { flex: 1 1 auto; min-width: 0; }
 .rank-slots { display: flex; flex-direction: column; gap: 5px; }
 .rank-slot {
-  display: grid; grid-template-columns: 70px minmax(0, 1fr); align-items: center; gap: var(--space-2);
-  border: 2px dashed var(--surface-line); border-radius: var(--radius-small); padding: 2px 4px; min-height: 56px;
+  display: grid; grid-template-columns: var(--rk-label) minmax(0, 1fr); align-items: center; gap: var(--space-2);
+  border: 2px dashed var(--surface-line); border-radius: var(--radius-small); padding: 2px 4px;
 }
 .rank-slot.is-filled { border-style: solid; border-color: transparent; background: var(--surface-sunken); }
 .rank-slot.is-target { border-color: #93b4f5; cursor: pointer; }
 .rank-slot.is-over { border-color: var(--accent); background: var(--accent-soft); }
-.slot-label { font-size: 12px; font-weight: 700; color: var(--on-light-muted); }
-.slot-empty { display: block; min-height: 48px; }
-.rank-slot .rank-card { min-height: 48px; }
+/* Round 4 item 7: the slot names sit on one line at every window size. */
+.slot-label { font-size: max(12px, 0.8em); font-weight: 700; color: var(--on-light-muted); white-space: nowrap; }
+.slot-empty { display: block; }
 .rank-arrows { flex: 0 0 auto; display: flex; flex-direction: column; gap: 2px; }
 .arrow-btn {
   width: 26px; height: 22px; border-radius: 6px; border: 1px solid var(--surface-line);
@@ -386,7 +451,8 @@
 .arrow-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* Onboarding brief [p9]: all answers on one screen */
-.brief-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-3) var(--space-5); }
+/* Round 4 item 13: one answer per row, in the candidate's chosen order. */
+.brief-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
 .brief-item { background: var(--surface-plain); border: 1px solid var(--surface-line); border-radius: var(--radius-small); padding: 10px 14px; }
 .brief-q { font-weight: 700; display: flex; gap: var(--space-2); align-items: baseline; margin-bottom: 4px; line-height: 1.35; }
 .brief-n {
@@ -405,19 +471,19 @@
 
 .coins {
   position: absolute; top: var(--space-3); right: var(--space-3); z-index: 5;
-  display: flex; align-items: center; gap: 5px;
+  display: flex; align-items: center; gap: calc(var(--u) * 0.5);
   background: rgba(31,39,51,0.88); border: 1px solid var(--box-border); border-radius: 999px;
-  padding: 5px 12px; font-size: max(12px, 0.82em); font-weight: 600; color: var(--on-dark);
+  padding: calc(var(--u) * 0.5) calc(var(--u) * 1.2); font-size: max(12px, 0.82em); font-weight: 600; color: var(--on-dark);
 }
-.coins span { margin-right: 4px; }
-.coin { width: 18px; height: 18px; flex: 0 0 auto; }
+.coins span { margin-right: calc(var(--u) * 0.4); }
+.coin { width: calc(var(--u) * 1.8); height: calc(var(--u) * 1.8); flex: 0 0 auto; }
 .coin circle { fill: #f5b82e; stroke: #b7791f; stroke-width: 1.5; }
 .coin .coin-in { fill: none; stroke: #b7791f; stroke-width: 1.2; }
 .coin.is-spent circle { fill: none; stroke: #8a95a8; stroke-width: 1.5; }
 
 /* The team hut, back-right [p12] */
 .hut { position: absolute; transform: translate(-50%, -50%); z-index: 2; display: flex; flex-direction: column; align-items: center; }
-.hut-svg { width: clamp(80px, 10vw, 120px); height: auto; display: block; }
+.hut-svg { width: clamp(80px, 10vw, 160px); height: auto; display: block; }
 .hut-crowd { display: flex; gap: 4px; margin-top: -8px; }
 
 /* Buildings (Workstations and hut) */
@@ -434,19 +500,19 @@
 /* Workstations: a coloured sign, a building, and up to station_capacity places */
 .station {
   position: absolute; transform: translate(-50%, -50%); z-index: 3;
-  width: clamp(124px, 19%, 200px); display: flex; flex-direction: column; align-items: center; gap: 3px;
+  width: clamp(124px, 19%, 270px); display: flex; flex-direction: column; align-items: center; gap: 3px;
   border-radius: var(--radius); padding: 4px; border: 2px solid transparent;
 }
-.map.is-crowded .station { width: clamp(112px, 17%, 190px); }
+.map.is-crowded .station { width: clamp(112px, 17%, 250px); }
 .st-sign {
-  position: relative; display: inline-flex; align-items: center; gap: 5px; max-width: 100%;
-  padding: 3px 11px 3px 7px; border-radius: 999px; color: #fff; font-weight: 700; font-size: max(12px, 0.8em);
+  position: relative; display: inline-flex; align-items: center; gap: calc(var(--u) * 0.5); max-width: 100%;
+  padding: calc(var(--u) * 0.3) calc(var(--u) * 1.1) calc(var(--u) * 0.3) calc(var(--u) * 0.7); border-radius: 999px; color: #fff; font-weight: 700; font-size: max(12px, 0.8em);
   box-shadow: 0 3px 8px rgba(0,0,0,0.3); white-space: nowrap;
 }
 .st-sign span { overflow: hidden; text-overflow: ellipsis; }
 /* An askable sign keeps room on its right for the coin badge, so the badge never covers the name. */
-.st-sign.has-coin { padding-right: 22px; }
-.st-icon { flex: 0 0 auto; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.st-sign.has-coin { padding-right: calc(var(--u) * 2.2); }
+.st-icon { flex: 0 0 auto; width: calc(var(--u) * 1.8); height: calc(var(--u) * 1.8); fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .st-sign.colour-green, .st-disc.colour-green, .badge-station.colour-green { background: #15803d; }
 .st-sign.colour-blue, .st-disc.colour-blue, .badge-station.colour-blue { background: #1d4ed8; }
 .st-sign.colour-amber, .st-disc.colour-amber, .badge-station.colour-amber { background: #b45309; }
@@ -455,10 +521,14 @@
 .st-building { width: 58%; height: auto; display: block; }
 .st-img { width: 70%; height: auto; max-height: 64px; object-fit: contain; display: block; }
 .st-slots {
-  display: flex; justify-content: center; gap: 6px; width: 100%; min-height: 64px; align-items: flex-start;
+  /* Round 4 item 8: the box is always as tall as it is with a person in it
+     (circle + name + the gaps around them), so dropping the first person
+     into an empty Workstation does not make the box grow. */
+  display: flex; justify-content: center; gap: calc(var(--u) * 0.6); width: 100%;
+  min-height: calc(var(--st-av) + var(--tok-name-lh) + 15px); align-items: flex-start;
   background: rgba(31,39,51,0.7); border: 2px dashed transparent; border-radius: var(--radius); padding: 5px 4px 4px;
 }
-.slot-open { width: 40px; height: 40px; margin: 0 6px; border-radius: 50%; border: 2px dashed rgba(230,233,240,0.35); }
+.slot-open { width: var(--st-av); height: var(--st-av); margin: 0 calc(var(--u) * 0.6); border-radius: 50%; border: 2px dashed rgba(230,233,240,0.35); }
 .station.is-askable { cursor: pointer; }
 .station.is-askable:hover .st-sign, .station.is-askable:focus-visible .st-sign { box-shadow: 0 0 0 3px #fff; }
 .station.is-dim .st-sign { background: #6b7280; }
@@ -467,9 +537,10 @@
 .station.is-over .st-slots { border-color: var(--accent); background: rgba(37,99,235,0.45); }
 
 /* People on the map */
-.token { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 60px; position: relative; user-select: none; -webkit-user-select: none; }
+.token { display: flex; flex-direction: column; align-items: center; gap: 2px; width: var(--tok-w); position: relative; user-select: none; -webkit-user-select: none; }
 .token-name {
-  max-width: 64px; padding: 0 5px; border-radius: 999px; font-size: 12px; line-height: 16px; font-weight: 600;
+  max-width: calc(var(--tok-w) + 4px); padding: 0 5px; border-radius: 999px;
+  font-size: var(--tok-name-fs); line-height: var(--tok-name-lh); font-weight: 600;
   background: rgba(31,39,51,0.9); color: var(--on-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .token.is-askable { cursor: pointer; }
@@ -480,17 +551,29 @@
 .token.is-drag { cursor: grab; touch-action: none; }
 .token.is-drag:hover .avatar { box-shadow: 0 0 0 3px var(--accent); }
 .token.is-selected .avatar { box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--accent); }
+/* Round 4 item 12: a Researcher waiting for an answer pulses slowly. Only
+   the orange ring's spread changes, so nothing moves and nothing reflows.
+   It stops while a card is open over the map, and for anyone who has asked
+   their system for less motion. */
 .token.is-alert { cursor: pointer; }
-.token.is-alert .avatar { box-shadow: 0 0 0 3px var(--warning); }
+.token.is-alert .avatar { box-shadow: 0 0 0 3px var(--warning); animation: alert-pulse 1.6s ease-in-out infinite; }
+@keyframes alert-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px var(--warning); }
+  50%      { box-shadow: 0 0 0 3px var(--warning), 0 0 0 9px rgba(217,119,6,0.32); }
+}
+.stage-area.has-card .token.is-alert .avatar { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .token.is-alert .avatar { animation: none; }
+}
 .is-dragging { opacity: 0.35; }
 .drag-ghost { position: fixed; z-index: 400; pointer-events: none; opacity: 0.95; cursor: grabbing; }
 .rank-card.drag-ghost { box-shadow: 0 12px 30px rgba(0,0,0,0.45); }
 
 /* Avatars: house initials circles in five tones */
 .avatar {
-  position: relative; flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%;
+  position: relative; flex: 0 0 auto; width: var(--av); height: var(--av); border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 700; color: #1a2230;
+  font-size: calc(var(--av) * 0.35); font-weight: 700; color: #1a2230;
 }
 .avatar.sm { width: 28px; height: 28px; font-size: 12px; }
 .avatar.lg { width: 64px; height: 64px; font-size: 22px; }
@@ -502,12 +585,12 @@
 .tone-d { background: #86efac; } .tone-e { background: #fda4af; }
 
 .badge {
-  position: absolute; top: -3px; right: -5px; width: 18px; height: 18px; border-radius: 50%;
+  position: absolute; top: -3px; right: -5px; width: calc(var(--u) * 1.8); height: calc(var(--u) * 1.8); border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center; border: 2px solid #fff;
 }
 .badge-coin { background: #f5b82e; }
-.badge-alert { background: var(--warning); color: #fff; font-size: 11px; font-weight: 800; font-style: normal; font-family: Georgia, serif; }
-.badge-station { top: auto; bottom: -2px; right: -4px; width: 24px; height: 24px; }
+.badge-alert { background: var(--warning); color: #fff; font-size: calc(var(--u) * 1.1); font-weight: 800; font-style: normal; font-family: Georgia, serif; }
+.badge-station { top: auto; bottom: -2px; right: -4px; width: calc(var(--u) * 2.4); height: calc(var(--u) * 2.4); }
 .avatar.xl .badge-station, .avatar.lg .badge-station { width: 28px; height: 28px; }
 .avatar.lg .badge-alert, .avatar.xl .badge-alert { width: 24px; height: 24px; font-size: 14px; }
 .badge-icon { width: 60%; height: 60%; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
@@ -587,13 +670,13 @@
 .stage-area.is-reflect .map-backdrop { opacity: 0.3; }
 .reflect-panel { position: absolute; inset: 0; overflow-y: auto; padding: var(--space-4) var(--space-4) 60px; z-index: 1; }
 .reflect-inner {
-  max-width: 860px; margin: 0 auto; background: var(--surface); color: var(--on-light);
+  max-width: var(--wide-col); margin: 0 auto; background: var(--surface); color: var(--on-light);
   border-radius: var(--radius); padding: var(--space-5) var(--space-6); box-shadow: 0 10px 28px rgba(0,0,0,0.35);
 }
 .reflect-inner h2 { font-size: clamp(17px, 1.6vw, 22px); }
 .reflect-prompt { font-style: italic; margin: 4px 0 var(--space-3); color: #3d4757; }
 .reflect-table { width: 100%; border-collapse: collapse; }
-.reflect-table th, .reflect-table td { padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--surface-line); }
+.reflect-table th, .reflect-table td { padding: clamp(6px, 0.3922vw + 2.47px, 10px) clamp(8px, 0.5882vw + 2.71px, 14px); text-align: center; border-bottom: 1px solid var(--surface-line); }
 .reflect-table thead th { font-size: max(13px, 0.86em); font-weight: 700; }
 .reflect-table tbody th { text-align: left; font-weight: 600; }
 .reflect-table .is-idk { background: var(--surface-sunken); }
@@ -602,7 +685,7 @@
 .radio-cell:hover .radio { border-color: var(--accent); }
 .radio-cell:focus-visible { outline: 2px solid var(--accent); }
 .radio {
-  display: block; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #9aa4b5; background: #fff; position: relative;
+  display: block; width: var(--radio); height: var(--radio); border-radius: 50%; border: 2px solid #9aa4b5; background: #fff; position: relative;
 }
 .radio-cell.is-on .radio { border-color: var(--accent); }
 .radio-cell.is-on .radio::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--accent); }
@@ -617,8 +700,8 @@
 .qcard {
   background: linear-gradient(180deg, #ffffff 0%, var(--surface) 100%); color: var(--on-light);
   border-radius: 20px; box-shadow: 0 24px 60px rgba(0,0,0,0.45);
-  width: min(780px, 100%); max-height: 100%; overflow-y: auto;
-  padding: 22px 24px; display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 22px; align-items: center;
+  width: min(var(--q-w), 100%); max-height: 100%; overflow-y: auto;
+  padding: calc(var(--u) * 2.2) calc(var(--u) * 2.4); display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 22px; align-items: center;
   animation: modal-rise 160ms cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 .card-layer.is-steady, .card-layer.is-steady .qcard { animation: none; }
@@ -638,15 +721,21 @@
 .opt-pill:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
 .opt-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .opt-pill:disabled { opacity: 0.45; cursor: not-allowed; }
-.opt-pill.is-quiet { background: transparent; color: var(--on-light-muted); justify-content: center; }
-.opt-pill.is-centre { justify-content: center; font-weight: 600; }
+/* Round 4 item 15: every option pill starts at the same left edge, so
+   Cancel lines up with the four reasons above it. */
+.opt-pill.is-quiet { background: transparent; color: var(--on-light-muted); }
+.opt-pill.is-centre { font-weight: 600; }
 .qcard.is-reason { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
 .qc-title { grid-column: 1 / -1; text-align: center; }
 .qc-move { display: flex; align-items: center; justify-content: center; gap: var(--space-3); }
 .qc-arrow { width: 40px; height: 16px; fill: none; stroke: var(--on-light-muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.qcard.is-small { width: min(440px, 100%); grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: var(--space-3); }
+.qcard.is-small { width: min(var(--q-small), 100%); grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: var(--space-3); }
 .qc-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); }
-.qcard.is-question { width: min(860px, 100%); align-items: start; }
+.qcard.is-question { width: min(var(--q-wide), 100%); align-items: start; }
+/* Round 4 item 16: with only two options the column of options is much
+   shorter than the message beside it, so it is centred instead of top-aligned
+   (which left a hole underneath it). */
+.qcard.is-question.is-two { align-items: center; }
 .qcard.is-question .opt-pill { padding: 7px 12px; }
 .btn-quiet.on-light, .btn.btn-quiet.on-light { background: transparent; color: var(--on-light); border: 1px solid var(--surface-line); }
 .btn-quiet.on-light:hover { background: var(--surface-sunken); }
@@ -657,6 +746,10 @@
 .modal-actions { align-items: center; }
 
 /* ==== 10. SFL: RESULTS DETAIL (as v1) ===================================== */
+/* Round 4 item 6: the score tiles stay on one row at every width down to
+   900; they narrow rather than wrapping 3 + 2. */
+.tiles { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+
 .summary-line .sep { margin: 0 12px; opacity: 0.5; }
 .r-block { background: var(--surface-plain); border: 1px solid var(--surface-line); border-radius: var(--radius); margin-bottom: var(--space-4); overflow: hidden; }
 .r-block-head {
@@ -690,6 +783,28 @@
 .flag { color: #b45309; }
 .muted { color: var(--on-light-muted); }
 
+/* The off-screen box js/app.js measures cards in before drawing them. It
+   must not be seen, must not be clicked, and nothing inside it may animate:
+   a card part-way through its opening animation is slightly scaled, and
+   would measure smaller than it really is. */
+.measure-host {
+  position: absolute; left: -10000px; top: 0; visibility: hidden; pointer-events: none;
+}
+.measure-host, .measure-host * { animation: none !important; transition: none !important; }
+
+/* ==== 11. ROUND 4 ITEM 14: NO ORPHAN WORDS ===============================
+   "balance" evens out the lines of a short heading; "pretty" stops a single
+   word being left alone on the last line of a paragraph. Browsers that do
+   not know them ignore them. */
+.gcard h1, .qcard h2, .reflect-inner h2, .panel h1, .start-panel h1, .modal h2, .gc-kicker {
+  text-wrap: balance;
+}
+.gc-body, .gc-lede, .qc-text, .qc-sub, .qc-note, .brief-q, .brief-a, .opt-pill, .pill-btn,
+.rank-card, .rank-hint, .g-left, .lc-goal, .lc-instr, .reflect-prompt, .sp-body, .sp-text,
+.start-body, .toast-text, .map-hint, .standing-sentence, .tile .tile-name {
+  text-wrap: pretty;
+}
+
 @media print {
   .r-block { break-inside: auto; border-color: #bbb; }
   .mark-row.is-wrong, .mark-row.is-partial { background: #fff; }
@@ -698,6 +813,9 @@
 
 /* Short windows (down to 540px high): tighten so everything still fits. */
 @media (max-height: 640px) {
+  /* A short window keeps the map furniture at the tightened size it has
+     today; only the text grows with the window. */
+  :root { --st-av: 34px; }
   .game { gap: var(--space-2); padding: var(--space-2) var(--space-3) var(--space-3); }
   .ring-timer, .ring-timer svg { width: 54px; height: 54px; }
   .ring-text b { font-size: 16px; }
@@ -710,11 +828,11 @@
   .reflect-table th, .reflect-table td { padding: 4px 8px; }
   .gcard.is-wide { padding-top: var(--space-4); }
   .gc-lede { margin-bottom: var(--space-3); }
-  .brief-item { padding: 7px 12px; }
+  .brief-item { padding: 4px 12px; }
   .gcard.is-wide { padding-bottom: var(--space-3); }
   .gcard h1 { margin-bottom: var(--space-1); }
   .st-building { width: 42%; }
-  .st-slots { min-height: 56px; padding: 4px 4px 3px; }
+  .st-slots { min-height: calc(var(--st-av) + var(--tok-name-lh) + 13px); padding: 4px 4px 3px; }
   .station .avatar.md { width: 34px; height: 34px; font-size: 13px; }
   .slot-open { width: 34px; height: 34px; margin: 0 8px; }
   .brief-a, .brief-q { font-size: 13px; line-height: 1.38; }
@@ -727,5 +845,15 @@
   .sp-picks .avatar.sm, .sp-picks .st-disc.sm { width: 24px; height: 24px; }
   .np-pair { padding: 5px 8px; }
   .arrow-btn { height: 20px; }
-  .rank-card { padding-top: 3px; padding-bottom: 3px; }
+  /* Round 4: the slot names now sit on one line, which makes a slot card
+     narrower and its question one line taller. These lines give that height
+     back, so the ranking card still fits without scrolling. */
+  .rank-card { padding-top: 2px; padding-bottom: 2px; }
+  .rank-slots { gap: 2px; }
+  .rank-slot { padding: 1px 4px; }
+  .gc-lede { margin-bottom: var(--space-2); }
+  /* Round 4 item 13: the four answers now sit one under another, which is
+     taller than the old 2 x 2. Tightened so they still fit. */
+  .brief-grid { gap: var(--space-2); }
+  .brief-q { margin-bottom: 2px; }
 }

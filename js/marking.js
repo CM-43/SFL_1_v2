@@ -50,9 +50,26 @@ var MARKING = (function () {
   function peopleAt(content, day, dayRun, stationId) {
     return (content.people || []).filter(function (p) { return currentStation(day, dayRun, p.id) === stationId; });
   }
-  function goodStationsOf(content, day, personId) {
+  /* A day may move where someone fits (good_stations_override). That change only
+     counts if the candidate could have known about it. day.override_revealed_by
+     lists, per person, what must have been asked TODAY for the change to apply
+     (the same shape as a reason's `needs`, but each entry names its own id).
+     No override_revealed_by for that person = the change always applies. */
+  function overrideApplies(day, personId, dayRun) {
     var o = day.good_stations_override;
-    if (o && o[personId]) return o[personId];
+    if (!o || !o[personId]) return false;
+    var rb = day.override_revealed_by;
+    if (!rb || !rb[personId]) return true;
+    var needs = rb[personId] || [];
+    for (var i = 0; i < needs.length; i++) {
+      var nd = needs[i];
+      if (!hasAsked(dayRun, nd.target, nd.id, nd.questions)) return false;
+    }
+    return true;
+  }
+  /* Where this person fits on this day, for this run. */
+  function goodStationsOf(content, day, personId, dayRun) {
+    if (overrideApplies(day, personId, dayRun)) return day.good_stations_override[personId];
     var p = byId(content.people, personId);
     return p ? (p.good_stations || []) : [];
   }
@@ -76,11 +93,14 @@ var MARKING = (function () {
     return group && group[id] ? group[id][q] || null : null;
   }
 
-  /* A reason is honest when the candidate asked, that day, everything the
-     reason relies on. Each entry in `needs` must be met; inside one entry,
-     any one of its questions is enough. A reason with no needs is always
-     honest. For a "station" need, the Workstation is the one the person was
-     moved to. */
+  /* A reason is honest when the candidate asked, ON ANY DAY SO FAR, everything
+     the reason relies on. The candidate's memory does not reset at midnight, so
+     a question asked on Day 1 still backs a reason given on Day 3 (the Notes
+     panel clears each day, but the person does not forget). markRun therefore
+     passes a run holding every question asked on days 1..today.
+     Each entry in `needs` must be met; inside one entry, any one of its
+     questions is enough. A reason with no needs is always honest. For a
+     "station" need, the Workstation is the one the person was moved to. */
   function reasonHonest(content, dayRun, personId, stationId, reasonId) {
     var reason = byId(content.rules.reasons, reasonId);
     if (!reason) return false;
@@ -137,7 +157,11 @@ var MARKING = (function () {
      2. EXPLORE — was each question spent on something worth knowing?
         The content marks every answer `useful: true/false`. Score = the
         points of the questions asked, out of the day's Explore points.
-        Unspent points are reported, not penalised.
+        An Explore Request that is not used DOES cost points: the score is
+        out of the day's request count, not out of the number of questions
+        asked, so leaving a request unused scores the same as spending it on
+        an answer that was not useful. The results page also names how many
+        were left unused.
      ====================================================================== */
   function markExplore(content, day, dayRun) {
     var sc = content.scoring.explore;
@@ -163,30 +187,40 @@ var MARKING = (function () {
   /* ======================================================================
      3. ASSIGN — right Workstation, the right partner, an honest reason.
         Per person:
-          placement_points  on one of their good_stations
+          placement_points  on one of their good_stations (or the day's
+                            good_stations_override, when it applies — see
+                            overrideApplies)
           pair_points       shares a Workstation with someone in pair_with,
                             AND that Workstation is one of their good_stations
-                            (only people who have pair_with can earn it)
+                            (only people who have pair_with can earn it).
+                            A day with `score_pairs: false` does not score
+                            pairs at all: pairMax is 0 for everyone, so that
+                            day's Assign total is smaller. Missing = true.
           reason_points     an honest reason for their last move; a person
-                            never moved earns it only when well placed
+                            never moved earns it only when well placed.
+                            Honest = asked on ANY day so far, so markAssign
+                            takes `historyRun`: a run holding every question
+                            asked on days 1..today.
      ====================================================================== */
-  function markAssign(content, day, dayRun) {
+  function markAssign(content, day, dayRun, historyRun) {
+    var askedRun = historyRun || dayRun;
     var sc = content.scoring.assign;
     var items = [], score = 0, of = 0;
     var people = content.people || [];
     for (var i = 0; i < people.length; i++) {
       var person = people[i];
       var st = currentStation(day, dayRun, person.id);
-      var goodList = goodStationsOf(content, day, person.id);
+      var goodList = goodStationsOf(content, day, person.id, dayRun);
       var good = !!st && goodList.indexOf(st) >= 0;
       var pairList = person.pair_with || [];
-      var pairMax = pairList.length ? sc.pair_points : 0;
+      var pairsScored = day.score_pairs !== false;
+      var pairMax = (pairsScored && pairList.length) ? sc.pair_points : 0;
       var partners = [];
       if (st) pairList.forEach(function (pid) { if (currentStation(day, dayRun, pid) === st) partners.push(pid); });
       var paired = partners.length > 0;
       var reasonId = dayRun.reasons ? dayRun.reasons[person.id] : null;
       var reasonTo = dayRun.reasonTo && dayRun.reasonTo[person.id] ? dayRun.reasonTo[person.id] : st;
-      var honest = reasonId ? reasonHonest(content, dayRun, person.id, reasonTo, reasonId) : null;
+      var honest = reasonId ? reasonHonest(content, askedRun, person.id, reasonTo, reasonId) : null;
       var pPlace = good ? sc.placement_points : 0;
       var pPair = pairMax && paired && good ? sc.pair_points : 0;
       var pReason = reasonId ? (honest ? sc.reason_points : 0) : (good ? sc.reason_points : 0);
@@ -195,6 +229,9 @@ var MARKING = (function () {
       of += max;
       items.push({ person: person, station: byId(content.stations, st), goodStations: goodList,
                    good: good, pairWith: pairList, partners: partners, paired: paired,
+                   pairsScored: pairsScored,
+                   hasOverride: !!(day.good_stations_override && day.good_stations_override[person.id]),
+                   overrideApplied: overrideApplies(day, person.id, dayRun),
                    reason: byId(content.rules.reasons, reasonId), honest: honest,
                    pointsPlace: pPlace, pointsPair: pPair, pointsReason: pReason,
                    points: points(pPlace + pPair + pReason), of: points(max),
@@ -262,13 +299,19 @@ var MARKING = (function () {
   function markRun(content, run) {
     var out = { onboarding: markOnboarding(content, run), days: [] };
     var totals = { explore: [0, 0], assign: [0, 0], support: [0, 0], reflect: [0, 0] };
+    /* Every question asked on days 1..today, in order. Assign reads this, not
+       just today's questions, so a reason may rest on something learned on an
+       earlier day (the Notes panel clears each day; the candidate does not). */
+    var askedSoFar = [];
     for (var d = 0; d < content.days.length; d++) {
       var day = content.days[d];
       var dr = dayRunOf(run, d);
+      askedSoFar = askedSoFar.concat(dr.asked || []);
+      var historyRun = { asked: askedSoFar };
       var has = function (ph) { return (day.phases || []).indexOf(ph) >= 0; };
       var r = {
         explore: has('explore') ? markExplore(content, day, dr) : null,
-        assign: has('assign') ? markAssign(content, day, dr) : null,
+        assign: has('assign') ? markAssign(content, day, dr, historyRun) : null,
         support: has('support') ? markSupport(content, day, dr) : null,
         reflect: has('reflect') ? markReflect(content, day, dr) : null
       };
@@ -360,6 +403,7 @@ var MARKING = (function () {
     currentStation: currentStation,
     peopleAt: peopleAt,
     goodStationsOf: goodStationsOf,
+    overrideApplies: overrideApplies,
     hasAsked: hasAsked,
     askedCount: askedCount,
     answerFor: answerFor,

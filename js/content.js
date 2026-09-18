@@ -310,6 +310,11 @@ var CONTENT = (function () {
           phases = day.phases;
         }
         var has = function (p) { return phases.indexOf(p) >= 0; };
+        /* score_pairs: false = the pair bonus is not scored on this day (nobody can
+           know the pairing yet). Missing means true. */
+        if (day.score_pairs !== undefined && typeof day.score_pairs !== 'boolean') {
+          err(W + ' > "score_pairs" must be true or false (leave it out for true).');
+        }
         if (need(day, 'intros', W, 'object') && need(day, 'instructions', W, 'object')) {
           phases.forEach(function (ph) {
             if (!isStr(day.intros[ph])) err(W + ' > intros > "' + ph + '" is missing.');
@@ -347,6 +352,44 @@ var CONTENT = (function () {
             checkStationList(day.good_stations_override[op], W + ' > good_stations_override > ' + op);
             if (isArr(day.good_stations_override[op]) && !day.good_stations_override[op].length) err(W + ' > good_stations_override > ' + op + ' must list at least one workstation.');
             if (!(day.placement_why_override && isStr(day.placement_why_override[op]))) warn(W + ' > good_stations_override > ' + op + ' has no placement_why_override, so the results will show the usual explanation for this person.');
+          }
+        }
+        /* override_revealed_by: what must have been asked TODAY for the day's
+           good_stations_override to count against the candidate. A person listed
+           here needs BOTH explanations (revealed and not revealed), and whatever
+           must be asked has to be askable today, or the change could never apply. */
+        if (day.placement_why_unrevealed !== undefined) {
+          if (!isObj(day.placement_why_unrevealed)) err(W + ' > "placement_why_unrevealed" must be a group in { }.');
+          else for (var up in day.placement_why_unrevealed) {
+            if (!byId(people, up)) err(W + ' > placement_why_unrevealed names "' + up + '", which is not a person.');
+            if (!isStr(day.placement_why_unrevealed[up])) err(W + ' > placement_why_unrevealed > ' + up + ' must be some text in quote marks.');
+          }
+        }
+        if (day.override_revealed_by !== undefined) {
+          if (!isObj(day.override_revealed_by)) err(W + ' > "override_revealed_by" must be a group in { }.');
+          else for (var rp in day.override_revealed_by) {
+            var rw = W + ' > override_revealed_by > ' + rp;
+            if (!byId(people, rp)) { err(W + ' > override_revealed_by names "' + rp + '", which is not a person.'); continue; }
+            if (!(day.good_stations_override && day.good_stations_override[rp])) err(rw + ' has no good_stations_override, so there is no change for it to reveal.');
+            if (!(day.placement_why_override && isStr(day.placement_why_override[rp]))) err(rw + ' needs a placement_why_override (the results text when the change WAS revealed).');
+            if (!(day.placement_why_unrevealed && isStr(day.placement_why_unrevealed[rp]))) err(rw + ' needs a placement_why_unrevealed (the results text when the change was NOT revealed).');
+            var rlist = day.override_revealed_by[rp];
+            if (!isArr(rlist) || !rlist.length) { err(rw + ' must be a list in [ ] with at least one thing to ask.'); continue; }
+            rlist.forEach(function (nd) {
+              if (!isObj(nd)) { err(rw + ': every item must be a group in { } with "target", "id" and "questions".'); return; }
+              if (nd.target !== 'person' && nd.target !== 'station') { err(rw + ': "target" must be "person" or "station".'); return; }
+              var pool = nd.target === 'person' ? people : stations;
+              var qlist2 = nd.target === 'person' ? personQs : stationQs;
+              if (!byId(pool, nd.id)) { err(rw + ': "' + nd.id + '" is not a ' + (nd.target === 'person' ? 'person' : 'workstation') + '.'); return; }
+              if (!isArr(nd.questions) || !nd.questions.length) { err(rw + ': "questions" must list at least one question id.'); return; }
+              nd.questions.forEach(function (q) {
+                if (!byId(qlist2, q)) err(rw + ' mentions the question "' + q + '", which is not in rules > ' + nd.target + '_questions.');
+              });
+              var availList = isObj(day.available) ? (nd.target === 'person' ? day.available.people : day.available.stations) : null;
+              if (!has('explore') || !isArr(availList) || availList.indexOf(nd.id) < 0) {
+                err(rw + ': "' + nd.id + '" cannot be asked on this day, so the change could never be revealed. Add it to ' + W + ' > available.');
+              }
+            });
           }
         }
 

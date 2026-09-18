@@ -11,6 +11,7 @@ This guide is for changing words, numbers and rules. You never need to touch the
 | `tools/make-passcode.html` | Makes the code for a new password | Just open it |
 | `data/test-every-shape/content.js` | A test scenario that uses every option. Not for customers | No |
 | `tools/*.js`, `tools/playthrough.py` | Checks for developers (need Node.js; the playthrough needs Python and Playwright) | No |
+| `tools/make-screens.py` | Redraws every picture in `screens/` and `screens/1920/` from the scripted route, in one pass. Start `python3 -m http.server 8765` in this folder, then run `python3 tools/make-screens.py` (needs Python and Playwright) | Just run it |
 | `screens/` | Pictures of every screen, for review | No |
 | `index.html`, `js/`, `css/` | The simulation itself | No |
 
@@ -54,6 +55,8 @@ The file runs from top to bottom in this order:
 
 Each day holds, in order: its goal, its stages, the stage intro cards (`intros`), the left-column instructions (`instructions`), Explore, the starting positions, Support, and Reflect.
 
+**The four stage intro cards (`intros`) must stay identical on all three days.** The real game shows one fixed text per stage, every day. If you change one, change it in Day 1, Day 2 and Day 3 so all three still match, and keep the day's own twist out of them: the only day-specific steer belongs in that day's `goal` (Day 3's goal is the one that has one).
+
 ## 5. Common changes, with examples
 
 ### Change some wording
@@ -63,7 +66,7 @@ Find the text and change what is inside the quotes. All button and screen words 
 
 Words in curly brackets, like `{name}` or `{n}`, are filled in by the simulation. Keep them.
 
-**The label rule (Master Doc D55).** Short labels use the real game's wording, so candidates recognise them: buttons, the four reasons, the mood words, tab names, slot names, small headings and toast titles (roughly up to three or four words). Full sentences use our own wording: the Explore questions, prompts, greetings, instructions, card text, answers and messages. The real wording is in `SFL-SCREENSHOT-INVENTORY.md`. When you change a short label, check it against the photos first.
+**The label rule (Master Doc D55).** Short labels use the real game's wording, so candidates recognise them: buttons, the four reasons, the mood words, tab names, slot names, small headings and toast titles (roughly up to three or four words). Full sentences use our own wording: the Explore questions, prompts, greetings, instructions, card text, answers and messages. The real wording is in `SFL-SCREENSHOT-INVENTORY.md`. When you change a short label, check it against the photos first. Buttons capitalise every word; a pill that is a sentence keeps its full stop or question mark, and a pill that is a label has none.
 
 ### Change the time limit or the time warnings
 `time_limit_minutes: 30,` → `time_limit_minutes: 35,`
@@ -90,9 +93,11 @@ Everything in `rules:` is a switch.
 ### Change the questions or the reasons
 `person_questions` and `station_questions` are the questions offered in Explore. Exactly one person question must have `reveals_mood: true`: it is the "how are you feeling" question that Reflect marking uses.
 
-`reasons` are the choices after every move in Assign. `needs` says what the candidate must have asked that day for the reason to count as honest:
+`reasons` are the choices after every move in Assign. `needs` says what the candidate must have asked for the reason to count as honest:
 
 `needs: [{ target: "person", questions: ["working", "feeling"] }]` reads: "honest if the candidate asked this person either question". `target: "station"` means the Workstation the person was moved to. `needs: []` means always honest.
+
+**A reason counts everything the candidate has learned so far, not only today.** A question asked on Day 1 still backs a reason given on Day 3. The Notes panel starts empty each day, but the candidate does not forget what they were told. So "Researcher preference" for Priya on Day 2 is honest if Priya was asked on Day 1, even though she cannot be asked on Day 2.
 
 ### Change a Researcher
 Each person has:
@@ -102,14 +107,21 @@ Each person has:
 - `placement_why`: the explanation shown in the results
 - `image`: leave as `null` (see "Pictures" below)
 
-If one day's answers should change where someone fits, add both of these to that day (Day 3 does this for Priya):
+If one day's answers should change where someone fits, add these to that day (Day 3 does this for Priya):
 
 ```
-good_stations_override: { priya: ["nursery"] },
-placement_why_override: { priya: "Today the Nursery chooses new planting sites…" },
+good_stations_override:   { priya: ["nursery"] },
+override_revealed_by:     { priya: [{ target: "station", id: "nursery", questions: ["work", "learn"] }] },
+placement_why_override:   { priya: "Today the Nursery chooses new planting sites…" },
+placement_why_unrevealed: { priya: "Nothing you asked today showed that the Nursery's work had changed…" },
 ```
 
-The first changes the marking for that day; the second replaces the explanation in the results. Make sure one of that day's Explore answers shows the change, and mark that answer `useful: true`.
+- `good_stations_override` changes where the person fits, for that day only.
+- `override_revealed_by` says **what the candidate must have asked that day for the change to count.** It is written like a reason's `needs`, but each item names its own `id`: here, the candidate must have asked the Nursery either of its two questions. Ask it and the change applies; do not ask it and the person's usual `good_stations` are used, so the candidate is marked on what they actually knew. Leave `override_revealed_by` out and the change always applies.
+- `placement_why_override` is the results explanation when the change **was** revealed.
+- `placement_why_unrevealed` is the results explanation when it **was not**. Write it so the candidate can see they were not punished for a question they never asked, and say what asking would have told them.
+
+Anyone named in `override_revealed_by` needs both explanations, and whatever must be asked has to be askable that day, or the error list will say so. Make sure at least one of that day's Explore answers actually shows the change, and mark that answer `useful: true`.
 
 ### Change a Workstation
 Each has `name` (full name), `short` (the word on its sign), `description`, `icon` and `colour`.
@@ -117,12 +129,14 @@ Each has `name` (full name), `short` (the word on its sign), `description`, `ico
 - Colours: `green`, `blue`, `amber`, `orange`, `purple`
 
 ### Change Explore for a day
-- `explore_points: 3,` is how many questions the candidate can ask that day.
+- `explore_points: 3,` is how many questions the candidate can ask that day. **An Explore Request that is not used does cost points:** the score is out of the day's request count, not out of the number of questions asked, so leaving a request unused scores the same as spending it on an answer that was not useful.
 - `available: { people: ["ines", "priya"], stations: ["nursery", "outreach"] }` says who can be asked that day. Everyone else is greyed out.
 - `answers:` needs one answer per question for everyone who is available. Each answer has `text`, `useful` (`true` earns the Explore point) and `why` (shown in the results).
 - When is an answer `useful: true`?
   - The answer to the "feeling" question is **always** useful: it tells the candidate that person's mood, which Reflect asks about. Its `why` says what it told you ("Tells you Kofi felt ordinary today, a cue for Reflect"). Do not say it was the only way to a Reflect point: the candidate cannot know beforehand whether a Support request will show that mood.
-  - Other answers are useful only when they change or confirm a placement or pairing that the person's role alone would not suggest.
+  - Every other answer should be `useful: true` as well, because every answer is written to tell the candidate something they can act on: what a person is best at, what skill a Workstation's work needs, or who fits it. Write the answers that way first, then tag them.
+  - **The only answers tagged `useful: false` are the ones the candidate could already have read on screen** before spending the request. In this scenario there are exactly four: Day 1 Ines "How do you like to work" and Day 3 Ines "How do you like to work" (her role already says where she fits), and Day 1 Nursery "What work is planned" and Day 1 Nursery "What have we learned" (the Nursery's description already says what happens there). Their `why` names what was already visible, for example: "Ines's role already told you where she fits; the request was better spent where the answer was open."
+  - For a useful answer, the `why` says what the answer told the candidate, for example: "Told you the Tide needs no specialist today, so nobody well placed elsewhere needs to move."
   - Each day needs at least as many useful answers as Explore Requests (the error list warns you if not).
 
 ### Change the starting positions for a day
@@ -164,6 +178,7 @@ Keep the order explore, assign, support, reflect.
 Everything is in `scoring:`. Examples:
 - A reasonable-but-not-best Support answer: `acceptable: 1` (full marks) or `acceptable: 0.5` (half).
 - The pair bonus in Assign: `pair_points: 0.5` (paid only on a good Workstation).
+- To switch the pair bonus off for one day, put `score_pairs: false,` in that day (Day 1 has it). On such a day nobody earns pair points, that day's Assign total is smaller — Day 1 is out of 6 instead of 7 — and the results show no pairing line at all. Use it on a day where the candidate could not have learned who works with whom: on Day 1 neither person in the pair, nor either of their Workstations, can be asked. Leave it out (or write `true`) for a normal day.
 - How much each part counts towards the percentile: `phase_weights` in `benchmark:`.
 
 **Do not change** the `percentiles` table or the `zones`. They are the same on every CaseMentor simulation.
