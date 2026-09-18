@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Make a password code</title>
+<style>
+  body { font-family: system-ui, sans-serif; background:#1f2733; color:#e6e9f0; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; }
+  .card { background:#f3f5fa; color:#1a2230; border-radius:16px; padding:28px 30px; width:min(560px, 92vw); }
+  h1 { font-size:20px; margin:0 0 6px; }
+  p { color:#5b6677; font-size:14px; margin:0 0 14px; }
+  input { width:100%; padding:10px 12px; font-size:15px; border:1px solid #d7dce5; border-radius:8px; box-sizing:border-box; }
+  code { display:block; margin-top:14px; padding:10px 12px; background:#fff; border:1px solid #d7dce5; border-radius:8px; word-break:break-all; font-size:13px; min-height:20px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Make a password code</h1>
+  <p>Type the new password. Copy the code that appears and paste it into <b>passcodeHash</b> in config.js. Nothing is sent anywhere; this page works offline.</p>
+  <input id="pw" type="text" autocomplete="off" spellcheck="false" placeholder="New password">
+  <code id="out"></code>
+</div>
+<script>
+  var pw = document.getElementById('pw'), out = document.getElementById('out');
+  pw.addEventListener('input', function () {
+    if (!pw.value) { out.textContent = ''; return; }
+    if (!window.crypto || !window.crypto.subtle) { out.textContent = 'This browser cannot make the code here. Open this page from the GitHub Pages address instead.'; return; }
+    crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw.value)).then(function (d) {
+      out.textContent = Array.prototype.map.call(new Uint8Array(d), function (b) { return ('00' + b.toString(16)).slice(-2); }).join('');
+    });
+  });
+</script>
+</body>
+</html>
