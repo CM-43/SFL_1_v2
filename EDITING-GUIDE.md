@@ -57,6 +57,8 @@ Each day holds, in order: its goal, its stages, the stage intro cards (`intros`)
 
 **The four stage intro cards (`intros`) must stay identical on all three days.** The real game shows one fixed text per stage, every day. If you change one, change it in Day 1, Day 2 and Day 3 so all three still match, and keep the day's own twist out of them: the only day-specific steer belongs in that day's `goal` (Day 3's goal is the one that has one).
 
+The body text of the Project Introduction, the Day Goals, the stage intros and the Assign Complete card is centred when it is one paragraph of at most 20 words (a single sentence, or two short ones), and left-aligned when it is longer or has more than one paragraph. This follows the real game, which centres the one-sentence Day Goal but left-aligns the Project Introduction and the stage intros. So a goal you lengthen past 20 words will switch to left-aligned.
+
 ## 5. Common changes, with examples
 
 ### Change some wording

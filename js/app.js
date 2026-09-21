@@ -146,12 +146,16 @@
     paintTimer();
   }, 1000);
 
+  function ringOffset() {
+    var t = state.timer, frac = t.total ? t.left / t.total : 1;
+    return (RING_C * (1 - frac)).toFixed(2);
+  }
   function timerHTML() {
-    return '<div class="ring-timer" id="ring-timer">' +
+    return '<div class="ring-timer' + (timeIsUp() ? ' is-up' : '') + '" id="ring-timer">' +
       '<svg viewBox="0 0 64 64" aria-hidden="true">' +
         '<circle class="ring-track" cx="32" cy="32" r="' + RING_R + '"></circle>' +
         '<circle class="ring-fill" id="ring-fill" cx="32" cy="32" r="' + RING_R + '" ' +
-          'stroke-dasharray="' + RING_C.toFixed(2) + '" stroke-dashoffset="0" transform="rotate(-90 32 32)"></circle>' +
+          'stroke-dasharray="' + RING_C.toFixed(2) + '" stroke-dashoffset="' + ringOffset() + '" transform="rotate(-90 32 32)"></circle>' +
       '</svg>' +
       '<div class="ring-text" id="ring-text"></div>' +
       '<div class="timer-paused" id="timer-paused">' + esc(L('timer_paused')) + '</div>' +
@@ -161,8 +165,7 @@
     var t = state.timer;
     var fillEl = byId('ring-fill'), textEl = byId('ring-text'), pausedEl = byId('timer-paused');
     if (!fillEl || !textEl) return;
-    var frac = t.total ? t.left / t.total : 1;
-    fillEl.setAttribute('stroke-dashoffset', (RING_C * (1 - frac)).toFixed(2));
+    fillEl.setAttribute('stroke-dashoffset', ringOffset());
     if (timeIsUp()) {
       textEl.innerHTML = '<span class="ring-up">' + esc(L('timer_up')) + '</span>';
       byId('ring-timer').classList.add('is-up');
@@ -528,7 +531,9 @@
     return simpleCard(L('kicker_day', { n: n, day: n }), L('assign_complete_title'), L('assign_complete_body'), L('continue'));
   }
   function simpleCardInner(kicker, heading, body, button) {
-    return '<section class="gcard">' +
+    var parts = String(body || '').split(/\n\s*\n/), words = String(body || '').trim().split(/\s+/).length;
+    var short = parts.length === 1 && words <= 20;
+    return '<section class="gcard' + (short ? ' is-short' : '') + '">' +
       (kicker ? '<div class="gc-kicker">' + esc(kicker) + '</div>' : '') +
       '<h1>' + esc(heading) + '</h1><div class="gc-body">' + paras(body) + '</div>' +
       '<div class="gc-actions"><button class="btn" data-act="card-next">' + esc(button) + '</button></div></section>';

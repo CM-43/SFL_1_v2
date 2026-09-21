@@ -29,6 +29,16 @@ min(14, max(10, 0.3922 * W / 100 + 6.4706))):
     lengthening pushed the Welcome card's button off the bottom at 900 x 540.
   The measured numbers are printed on every PASS/FAIL line.
 
+Round 8 checks (WK's play-through of round 7):
+  timer ring steady after a redraw: right after the ranking card opens, after
+    the first drop on it, and after the Day 1 Explore intro opens, the ring's
+    computed stroke-dashoffset (at once and 100 ms later) and its attribute agree
+    within 1.0 unit, i.e. the ring no longer refills and drains again. The clock
+    is set to 20 minutes left for these, then put back.
+  card body alignment: the Project Introduction, Day 1 Goal, Day 1 Explore,
+    Assign and Reflect intros and the Assign Complete card centre their body text
+    when it is one paragraph of at most 20 words, and left-align it otherwise.
+
 Modes:
   (none)      the scripted route. Expected result: 93.1 weighted, 89th percentile.
   late        time runs out at the start of Day 3 Assign.
@@ -346,6 +356,34 @@ def check_tutorial_arrow(page, label):
     check(f"tutorial arrow: tip on the line's extension ({label})", off <= 0.5 and ahead, f"off by {off:.2f} units")
     check(f"tutorial arrow: line stops 9-11 units short of the tip ({label})", 9 <= short <= 11, f"gap={short:.2f} units")
 
+# ---- round 8: the timer ring is born at its real value ------------------
+RING = """() => { const e = document.getElementById('ring-fill');
+  return e ? [parseFloat(getComputedStyle(e).strokeDashoffset), parseFloat(e.getAttribute('stroke-dashoffset'))] : null; }"""
+def check_ring_steady(page, label):
+    """Read at once, again 100 ms later, and the attribute: all within 1.0 unit.
+    Before round 8 a redraw wrote a full ring that then drained over 0.9 s."""
+    a = page.evaluate(RING); page.wait_for_timeout(100); b = page.evaluate(RING)
+    if a is None or b is None:
+        check(f"timer ring present ({label})", False, (a, b)); return
+    vals = [a[0], b[0], b[1]]
+    check(f"timer ring steady after a redraw ({label})", max(vals) - min(vals) <= 1.0,
+          f"computed at once={a[0]:.2f} 100ms later={b[0]:.2f} attribute={b[1]:.2f}")
+
+# ---- round 8: short card bodies centred, longer ones left-aligned --------
+ALIGN = """() => { const b = document.querySelector('.gcard .gc-body');
+  if (!b) return null;
+  const text = b.innerText.trim();
+  return { paras: b.querySelectorAll('p').length, words: text ? text.split(/\\s+/).length : 0,
+           align: getComputedStyle(b).textAlign }; }"""
+def check_card_align(page, label):
+    m = page.evaluate(ALIGN)
+    if m is None:
+        check(f"card body present ({label})", False); return
+    short = m["paras"] == 1 and m["words"] <= 20
+    ok = m["align"] == "center" if short else m["align"] in ("start", "left")
+    check(f"card body {'centred' if short else 'left-aligned'} ({label})", ok,
+          f"paragraphs={m['paras']} words={m['words']} text-align={m['align']}")
+
 def ask(page, target, tid, q, name):
     click(page, f'[data-act="ask"][data-target="{target}"][data-id="{tid}"]')
     shot(page, f"{name}-askcard")
@@ -435,7 +473,13 @@ with sync_playwright() as p:
         card_next(page)
     check_same_box("tutorial: the five cards are the same size", tut_boxes)
     check_card_fits(page, "Project Introduction")
+    check_card_align(page, "Project Introduction")
+    # Round 8: the clock runs from here, with some time gone, for the ring checks.
+    check("clock running after the tutorial", state(page)["timer"]["running"] is True, state(page)["timer"])
+    clock_start = state(page)["timer"]["startedAt"]
+    set_time_left(page, 20 * 60); page.wait_for_timeout(1200)
     shot(page, "onb-intro"); card_next(page)
+    check_ring_steady(page, "ranking card opened")
     settle(page)
     order = ["ob-work", "ob-known", "ob-support", "ob-together"]
     rank_boxes = [("before the first drag", box(page, ".gcard"))]
@@ -444,6 +488,7 @@ with sync_playwright() as p:
         anim_watch(page)
         drag(page, f'.rank-card[data-id="{q}"]', f'[data-rank-slot="{i}"]')
         if i == 0:
+            check_ring_steady(page, "ranking card, first drop")
             anim_check(page, "ranking card after a drop")
         rank_boxes.append((f"after drop {i+1}", box(page, ".gcard")))
     check("ranking by drag", state(page)["run"]["onboarding"]["order"] == order, state(page)["run"]["onboarding"]["order"])
@@ -469,8 +514,14 @@ with sync_playwright() as p:
     check("Onboarding Brief fits without scrolling", sc[0] <= sc[1] + 1, sc)
     check_text_fits(page, "Onboarding Brief"); check_card_fits(page, "Onboarding Brief")
     card_next(page, "d1-goal")
+    check_card_align(page, "Day 1 Goal")
     intro_boxes = []
-    card_next(page, "d1-explore-intro"); settle(page)
+    card_next(page)
+    check_ring_steady(page, "Day 1 Explore intro opened")
+    # Round 8: put the clock back where it would have been without the ring checks.
+    page.evaluate("(t) => { window.__sfl.getState().timer.startedAt = t; }", clock_start); page.wait_for_timeout(1200)
+    shot(page, "d1-explore-intro"); settle(page)
+    check_card_align(page, "Day 1 Explore intro")
     intro_boxes.append(("explore intro", box(page, ".gcard")))
     card_next(page, "d1-explore-map")
     # ---- DAY 1 EXPLORE
@@ -528,6 +579,7 @@ with sync_playwright() as p:
     click(page, '[data-act="panel"][data-id="help"]'); shot(page, "d1-help"); click(page, '[data-act="panel-close"]')
     click(page, '[data-act="stage-done"]')
     shot(page, "d1-assign-intro"); settle(page)
+    check_card_align(page, "Day 1 Assign intro")
     intro_boxes.append(("assign intro", box(page, ".gcard")))
     card_next(page, "d1-assign-map")
     slot_h = page.evaluate("""() => [...document.querySelectorAll('.st-slots')].map(e =>
@@ -547,12 +599,14 @@ with sync_playwright() as p:
     shot(page, "d1-assign-done-map")
     check("click-to-place fallback", state(page)["run"]["days"][0]["assignment"].get("ines") == "tide", state(page)["run"]["days"][0]["assignment"])
     click(page, '[data-act="stage-done"]'); shot(page, "d1-assign-complete")
+    check_card_align(page, "Assign Complete")
     card_next(page, "d1-support-intro"); settle(page)
     intro_boxes.append(("support intro", box(page, ".gcard")))
     card_next(page, "d1-support-map")
     check_left_column(page, "Day 1 Support map")
     support_all(page, "d1", {"d1-s1": "a", "d1-s2": "b", "d1-s3": "a", "d1-s4": "b"})
     click(page, '[data-act="stage-done"]'); shot(page, "d1-reflect-intro"); settle(page)
+    check_card_align(page, "Day 1 Reflect intro")
     intro_boxes.append(("reflect intro", box(page, ".gcard")))
     check_same_box("Day 1: the four stage-intro cards are the same size", intro_boxes)
     card_next(page, "d1-reflect"); settle(page)

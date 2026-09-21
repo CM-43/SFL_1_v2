@@ -982,10 +982,13 @@
 /* ==== 13. ROUND 7 SECOND LOOK: three small consistency fixes ==============
    Found by the independent review of the round-7 pictures. These apply at
    every window size (they change the look of short windows on purpose). */
-/* The Day Goal, stage intro and Assign Complete cards centre their heading
-   and button, so a two-line body text sat visibly off to the left. The real
-   game centres these texts [p10, p11, p18]. */
-.gcard:not(.is-tutorial):not(.is-wide) .gc-body { text-align: center; }
+/* Simple cards (Project Introduction, Day Goal, stage intros, Assign
+   Complete) centre their body text only when it is short: one paragraph of
+   at most 20 words (app.js adds .is-short). Longer or multi-paragraph bodies
+   stay left-aligned. The real game centres the one-sentence Day Goal but
+   left-aligns the Project Introduction and the stage intros (WK's photos,
+   21 Sep). */
+.gcard.is-short .gc-body { text-align: center; }
 /* "Answer Request" and "Make Another Selection" are a pair, so they share
    one text size and padding (the quiet one keeps its quiet colours). */
 .qc-buttons .btn, .qc-buttons .btn-quiet { font-size: max(14px, 0.9em); padding: 9px 22px; }
