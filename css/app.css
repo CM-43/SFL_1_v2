@@ -857,3 +857,138 @@
   .brief-grid { gap: var(--space-2); }
   .brief-q { margin-bottom: 2px; }
 }
+
+/* ==== 12. TALL WINDOWS (round 7) ==========================================
+   The candidate plays on a 1920 x 1080 screen. The caps in section 0 were
+   chosen for small windows, so on a big screen the cards, the Notes panel
+   and the buttons stopped growing and left most of the screen empty. The
+   real game sizes its cards and panels to the screen; so does this section.
+
+   Everything here sits inside "min-height: 641px", so it applies only to
+   windows taller than 640px. Short windows (900 x 540, and 1120 x 630 in
+   the course page) never see any of it and keep exactly their round-6 look;
+   this was checked with a pixel comparison of 56 screenshots.
+
+   The variables set in :root below replace the round-4 ones in section 0,
+   but only on tall windows. Every other size is still written in --u, the
+   general step from section 0 (10px at 900 wide, 14px at 1920).           */
+@media (min-height: 641px) {
+  :root {
+    /* --font-card is the text on cards and panels: 14px at 900 wide, 21px
+       at 1920. The frame around the game keeps --font (14 -> 19); only what
+       the candidate reads on a card or panel gets the larger size. */
+    --font-card: clamp(14px, 0.69vw + 7.8px, 21px);
+    /* Higher caps: a simple card up to 1000px, a wide card and the tutorial
+       up to 1440px, a person on the map up to 72px, and their name pill with
+       them. Each still starts at today's size in a 900-wide window. */
+    --card-w:    clamp(620px, 34vw + 314px, 1000px);        /* 620 -> 1000 */
+    --wide-col:  clamp(860px, 56.9vw + 348px, 1440px);      /* 860 -> 1440 */
+    --av:        clamp(40px, 3.137vw + 11.76px, 72px);      /* 40 -> 72 */
+    --tok-w:     clamp(60px, 2.94vw + 33.5px, 90px);
+    --tok-name-fs: clamp(12px, 0.49vw + 7.6px, 17px);
+  }
+
+  /* Top-right buttons and the timer. Restart and full screen, the timer
+     ring and the progress dots and labels were fixed in pixels, so on a big
+     screen they looked like small-laptop controls. They now grow with --u. */
+  .g-tools .btn-quiet { padding: calc(var(--u) * 0.6) calc(var(--u) * 1.4); font-size: max(13px, 0.9em); }
+  .btn-fullscreen { width: calc(var(--u) * 3.6); height: calc(var(--u) * 3.1); font-size: calc(var(--u) * 1.5); }
+  .tool-icon { width: calc(var(--u) * 1.7); height: calc(var(--u) * 1.7); }
+  .ring-timer, .ring-timer svg { width: calc(var(--u) * 6); height: calc(var(--u) * 6); }
+  .ring-text b { font-size: calc(var(--u) * 1.9); }
+  .ring-text span, .ring-text .ring-up, .ring-timer .timer-paused { font-size: calc(var(--u) * 1.2); }
+  .pg-step { font-size: calc(var(--u) * 1.2); }
+  .pg-dot { width: calc(var(--u) * 1.4); height: calc(var(--u) * 1.4); }
+  .pg-step + .pg-step::before { top: calc(var(--u) * 0.6); }
+
+  /* Card screens (tutorial, onboarding, goal, stage intros). The padding
+     grows with the window, the heading goes up to 38px and the body text
+     uses --font-card (a simple card's text up to 24px, as it holds only a
+     few lines). Each card is also held open to a minimum height, 34 x --u
+     for the tutorial and wide cards and 28 x --u for a simple card, so a
+     short text does not leave a small card floating in a big screen. The
+     min() stops that minimum ever making a card taller than its space. */
+  .gcard { padding: calc(var(--u) * 3.2) calc(var(--u) * 4) calc(var(--u) * 2.6); min-height: min(100%, calc(var(--u) * 34)); }
+  .gcard h1 { font-size: clamp(20px, 1.4vw + 7.4px, 38px); }
+  .gc-body, .gc-lede, .brief-a { font-size: var(--font-card); }
+  .gcard:not(.is-tutorial):not(.is-wide) .gc-body { font-size: clamp(15px, 0.85vw + 7.4px, 24px); }
+  .gcard:not(.is-tutorial):not(.is-wide) { min-height: min(100%, calc(var(--u) * 28)); }
+  .gc-actions .btn { font-size: max(14px, 1em); padding: calc(var(--u) * 0.9) calc(var(--u) * 2.4); }
+  .gc-kicker { font-size: calc(var(--u) * 1.2); }
+  .tut-grid { gap: calc(var(--u) * 4); grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); }
+  .tut-art { padding: calc(var(--u) * 2); }
+  .gcard.is-wide { padding-top: calc(var(--u) * 2.6); padding-bottom: calc(var(--u) * 2.2); }
+  .brief-item { padding: calc(var(--u) * 1.2) calc(var(--u) * 1.6); }
+  .brief-q { font-size: var(--font-card); }
+
+  /* Cards over the map (ask, answer, reason, request, question). Each card
+     takes at least 78% of the map's width (84% for a Support question) and
+     58% of its height, so it reads as the thing to deal with now, as in the
+     real game. The two columns are split evenly (the reason card keeps a
+     slightly wider right column for its four reasons), and the avatar,
+     option pills and move arrow grow with them: the big avatar is 9.6 x --u,
+     96px at 900 wide and 134px at 1920. The small request card ("X needs
+     your help") holds one line and a button, so it gets no minimum height. */
+  .qcard { width: min(100%, max(var(--q-w), 78%)); min-height: min(100%, 58%); padding: calc(var(--u) * 3.2) calc(var(--u) * 3.6); gap: calc(var(--u) * 3);
+           grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border-radius: calc(var(--u) * 2); }
+  .qcard.is-question { width: min(100%, max(var(--q-wide), 84%)); }
+  .qcard.is-reason { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); }
+  .qcard.is-small { min-height: 0; width: min(100%, max(var(--q-small), 40%)); padding: calc(var(--u) * 3) calc(var(--u) * 3.6); }
+  .qcard h2 { font-size: clamp(18px, 1.3vw + 6.3px, 34px); }
+  .qc-text, .qc-sub, .qc-note { font-size: var(--font-card); }
+  .qc-pills { gap: calc(var(--u) * 1); }
+  .opt-pill, .qcard.is-question .opt-pill { font-size: var(--font-card); padding: calc(var(--u) * 0.9) calc(var(--u) * 1.5); border-radius: calc(var(--u) * 1.4); }
+  .avatar.xl, .st-disc.xl { width: calc(var(--u) * 9.6); height: calc(var(--u) * 9.6); font-size: calc(var(--u) * 3.3); }
+  .avatar.lg, .st-disc.lg { width: calc(var(--u) * 7); height: calc(var(--u) * 7); font-size: calc(var(--u) * 2.4); }
+  .avatar.xl .badge-station, .avatar.lg .badge-station { width: calc(var(--u) * 3); height: calc(var(--u) * 3); }
+  .avatar.lg .badge-alert, .avatar.xl .badge-alert { width: calc(var(--u) * 2.6); height: calc(var(--u) * 2.6); font-size: calc(var(--u) * 1.5); }
+  .qc-arrow { width: calc(var(--u) * 4.4); height: calc(var(--u) * 1.8); }
+  .qc-move { gap: calc(var(--u) * 2); }
+
+  /* Notes and Help. Section 7 holds the panel at 340px, which made it
+     narrower on a 1920 screen than on a 900 one (short windows get 420px).
+     It is now 34 x --u wide (340px at 900, 476px at 1920), and its tabs,
+     person buttons, avatars and text grow with it. */
+  .side-panel { width: min(calc(var(--u) * 34), calc(100% - 24px)); }
+  .sp-body { font-size: var(--font-card); padding: calc(var(--u) * 1.2) calc(var(--u) * 1.6); }
+  .sp-head { font-size: max(14px, 1em); padding: calc(var(--u) * 0.8) calc(var(--u) * 1) calc(var(--u) * 0.8) calc(var(--u) * 1.6); }
+  .sp-tab { font-size: max(12px, 0.9em); padding: calc(var(--u) * 0.5) calc(var(--u) * 1.4); }
+  .sp-picks .avatar.sm, .sp-picks .st-disc.sm { width: calc(var(--u) * 3.6); height: calc(var(--u) * 3.6); font-size: calc(var(--u) * 1.4); }
+  .sp-pick { font-size: max(12px, 0.8em); min-width: calc(var(--u) * 6.4); max-width: calc(var(--u) * 10); }
+  .np-label { font-size: max(12px, 0.8em); }
+
+  /* Reflect. The table sat at the top of the stage with empty map below it;
+     it is now centred in the stage (the panel becomes a flex box and the
+     table takes margin: auto), with roomier rows and bigger text. */
+  .reflect-panel { display: flex; }
+  .reflect-inner { margin: auto; width: min(100%, var(--wide-col)); padding: calc(var(--u) * 2.6) calc(var(--u) * 3.2); }
+  .reflect-inner h2 { font-size: clamp(17px, 1.1vw + 7px, 30px); }
+  .reflect-prompt, .reflect-table { font-size: var(--font-card); }
+  .reflect-table th, .reflect-table td { padding: calc(var(--u) * 0.9) calc(var(--u) * 1.2); }
+  .rf-person .avatar.sm { width: calc(var(--u) * 3.4); height: calc(var(--u) * 3.4); font-size: calc(var(--u) * 1.3); }
+
+  /* Map furniture. The Workstations, the team hut, the Notes and Help
+     pills, the time warning and the main button bottom-right grow a little,
+     so they stay in proportion with the bigger people on the map. */
+  .station { width: clamp(124px, 19%, 310px); }
+  .map.is-crowded .station { width: clamp(112px, 17%, 290px); }
+  .hut-svg { width: clamp(80px, 14vw, 280px); }   /* wider than the four people standing in front of it */
+  .pill-btn { padding: calc(var(--u) * 0.5) calc(var(--u) * 1.4) calc(var(--u) * 0.5) calc(var(--u) * 1); font-size: max(13px, 0.9em); }
+  .pill-icon { width: calc(var(--u) * 1.8); height: calc(var(--u) * 1.8); }
+  .toast { width: min(calc(var(--u) * 34), 50vw); }
+  .stage-go { font-size: max(14px, 0.95em); padding: calc(var(--u) * 0.9) calc(var(--u) * 2.2); }
+}
+
+/* ==== 13. ROUND 7 SECOND LOOK: three small consistency fixes ==============
+   Found by the independent review of the round-7 pictures. These apply at
+   every window size (they change the look of short windows on purpose). */
+/* The Day Goal, stage intro and Assign Complete cards centre their heading
+   and button, so a two-line body text sat visibly off to the left. The real
+   game centres these texts [p10, p11, p18]. */
+.gcard:not(.is-tutorial):not(.is-wide) .gc-body { text-align: center; }
+/* "Answer Request" and "Make Another Selection" are a pair, so they share
+   one text size and padding (the quiet one keeps its quiet colours). */
+.qc-buttons .btn, .qc-buttons .btn-quiet { font-size: max(14px, 0.9em); padding: 9px 22px; }
+/* The Help panel's section headings ("This stage", "Key terms") were smaller
+   than the term names under them. */
+.sp-h { font-size: max(14px, 1em); }

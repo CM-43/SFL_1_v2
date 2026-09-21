@@ -595,6 +595,21 @@
     if (tallest > 0) card.style.minHeight = Math.min(Math.ceil(tallest), Math.floor(innerH)) + 'px';
   }
 
+  /* An arrow from (x1, y1) to the tip (x2, y2): the line stops short of the
+     tip so the round line cap never pokes through the head, and the head is
+     a triangle whose base is square to the line, whatever the angle. */
+  function artArrow(x1, y1, x2, y2) {
+    var dx = x2 - x1, dy = y2 - y1, len = Math.sqrt(dx * dx + dy * dy);
+    var ux = dx / len, uy = dy / len, px = -uy, py = ux;
+    var headLen = 11, headHalf = 5.5;
+    var bx = x2 - ux * headLen, by = y2 - uy * headLen;          // centre of the head's base
+    var lx = x2 - ux * (headLen - 1), ly = y2 - uy * (headLen - 1); // where the line stops
+    var f = function (n) { return Math.round(n * 10) / 10; };
+    return '<path class="art-arrow" d="M' + f(x1) + ' ' + f(y1) + ' L' + f(lx) + ' ' + f(ly) + '"/>' +
+      '<path class="art-arrow-head" d="M' + f(x2) + ' ' + f(y2) + ' L' + f(bx + px * headHalf) + ' ' + f(by + py * headHalf) +
+      ' L' + f(bx - px * headHalf) + ' ' + f(by - py * headHalf) + ' Z"/>';
+  }
+
   /* Small illustrations for the tutorial [p2–p5]: a grey mock screen with an
      arrow to the feature being described. */
   function tutorialArt(key) {
@@ -608,9 +623,9 @@
         '<g class="art-lines">' + houses + '</g></svg>';
     }
     var arrow, spot;
-    if (key === 'timer') { spot = '<circle class="art-hi" cx="26" cy="22" r="10"/>'; arrow = '<path class="art-arrow" d="M100 70 L44 30"/><path class="art-arrow-head" d="M44 30 l10 1 l-4 8 Z"/>'; }
-    else if (key === 'notes') { spot = '<rect class="art-hi" x="14" y="100" width="34" height="12" rx="6"/><rect class="art-pill" x="54" y="100" width="28" height="12" rx="6"/>'; arrow = '<path class="art-arrow" d="M110 60 L42 96"/><path class="art-arrow-head" d="M42 96 l6 -8 l4 7 Z"/>'; }
-    else { spot = '<rect class="art-pill" x="14" y="100" width="34" height="12" rx="6"/><rect class="art-hi" x="54" y="100" width="28" height="12" rx="6"/>'; arrow = '<path class="art-arrow" d="M130 60 L74 96"/><path class="art-arrow-head" d="M74 96 l6 -8 l4 7 Z"/>'; }
+    if (key === 'timer') { spot = '<circle class="art-hi" cx="26" cy="22" r="10"/>'; arrow = artArrow(100, 70, 44, 30); }
+    else if (key === 'notes') { spot = '<rect class="art-hi" x="14" y="100" width="34" height="12" rx="6"/><rect class="art-pill" x="54" y="100" width="28" height="12" rx="6"/>'; arrow = artArrow(110, 60, 42, 96); }
+    else { spot = '<rect class="art-pill" x="14" y="100" width="34" height="12" rx="6"/><rect class="art-hi" x="54" y="100" width="28" height="12" rx="6"/>'; arrow = artArrow(130, 60, 74, 96); }
     return '<svg class="art" viewBox="0 0 190 124" aria-hidden="true">' +
       '<rect class="art-screen" x="4" y="4" width="182" height="116" rx="8"/>' +
       '<rect class="art-block" x="44" y="14" width="102" height="8" rx="4"/>' +

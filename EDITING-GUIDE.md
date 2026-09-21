@@ -32,7 +32,7 @@ Inside text, `\n` is a line break and `\n\n` starts a new paragraph.
 
 **If you make a mistake, nothing breaks silently.** The simulation will not start. It shows a list of what to fix, and where (for example "Day 2 > support > d2-s3 > options"). Undo your change, or fix what the list says.
 
-**Keep texts short.** Every card must fit on a small laptop screen (900 × 540) without scrolling. As a guide: Explore answers under about 120 characters, Support messages under about 200, Support options under about 150.
+**Keep texts to the real game's length.** Every card must fit on a small laptop screen (900 × 540) without scrolling. The lengths were measured against photographs of the real game (round 7): an Explore answer 24 to 32 words, a Support message 45 to 55 words, a Support option 25 to 35 words (and the options in one request within about six words of each other, so length gives nothing away). Longer than that and a four-option card will not fit at 900 × 540; much shorter and the simulation reads as easier than the real thing.
 
 ## 4. How the file is laid out
 
@@ -119,7 +119,7 @@ placement_why_unrevealed: { priya: "Nothing you asked today showed that the Nurs
 - `good_stations_override` changes where the person fits, for that day only.
 - `override_revealed_by` says **what the candidate must have asked that day for the change to count.** It is written like a reason's `needs`, but each item names its own `id`: here, the candidate must have asked the Nursery either of its two questions. Ask it and the change applies; do not ask it and the person's usual `good_stations` are used, so the candidate is marked on what they actually knew. Leave `override_revealed_by` out and the change always applies.
 - `placement_why_override` is the results explanation when the change **was** revealed.
-- `placement_why_unrevealed` is the results explanation when it **was not**. Write it so the candidate can see they were not punished for a question they never asked, and say what asking would have told them.
+- `placement_why_unrevealed` is the results explanation when it **was not**. Write it so it is true wherever the person ended up: the row is marked on what the candidate knew, and it says what asking would have told them.
 
 Anyone named in `override_revealed_by` needs both explanations, and whatever must be asked has to be askable that day, or the error list will say so. Make sure at least one of that day's Explore answers actually shows the change, and mark that answer `useful: true`.
 

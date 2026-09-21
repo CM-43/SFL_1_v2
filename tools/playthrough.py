@@ -1,9 +1,33 @@
-"""Scripted playthrough of SFL v2 (Fable's round-9 script) plus the round-3 to round-5 checks.
+"""Scripted playthrough of SFL v2 (Fable's round-9 script) plus the round-3 to round-7 checks.
 Usage: python tools/playthrough.py WIDTH HEIGHT OUTDIR   [late|unrevealed|guess]
        (first run: cd SFL-BUILD-v2 && python3 -m http.server 8765)
 
 Run it at all four supported sizes; everything must pass at each of them:
     900x540   1120x630   1402x789   1920x1080
+
+Round 7 checks (sizes on the screen; u is the CSS --u for this window's width,
+min(14, max(10, 0.3922 * W / 100 + 6.4706))):
+  windows taller than 640px (1402x789, 1920x1080), Day 1 Explore:
+    full-screen button 3.1 x u high (within 1.5px), Restart at least 2.4 x u high,
+    timer ring 6 x u square; the Ines question card at least 76% of the stage wide
+    and 56% high, its two columns within 4px of each other, its avatar 9.6 x u;
+    the first Support question at least 82% of the stage wide; Notes 34 x u wide;
+    the Reflect table centred in the stage within 8px.
+    Two of these are measured against the box the CSS actually sizes to (see
+    A-NOTE.md, round 7): the card's height against the space inside the dimmed
+    layer (the stage less 12px padding each side), and the Reflect table's centre
+    against the space above the 60px kept for the Complete Reflect button.
+  windows 640px tall or less (900x540, 1120x630): the round-6 sizes, i.e.
+    full-screen button 34x30, timer ring 54, Notes 420 (or the stage width - 24
+    if smaller), big avatar 68.
+  every size: each tutorial arrow's tip lies on its line carried on (within 0.5
+    units) and the line stops 9 to 11 units short of the tip.
+  every size: no card needs to scroll (each tutorial card, the Project
+    Introduction, the ranking card, the Brief, the Ines question card and the
+    first two- and four-option Support cards): nothing inside the card scrolls
+    and its button sits inside the window. Added after the round-7 content
+    lengthening pushed the Welcome card's button off the bottom at 900 x 540.
+  The measured numbers are printed on every PASS/FAIL line.
 
 Modes:
   (none)      the scripted route. Expected result: 93.1 weighted, 89th percentile.
@@ -149,6 +173,26 @@ def check_text_fits(page, label):
     bad = page.evaluate(TEXTFIT)
     check(f"no text cut off ({label})", not bad, bad)
 
+# ---- round 7: a card must never need to scroll ---------------------------
+# TEXTFIT looks for text cut off sideways. A card that is taller than its
+# space scrolls instead, and its button drops below the fold, which TEXTFIT
+# does not see (round 7 found the longer Welcome text doing exactly that at
+# 900 x 540). So every card is also checked top to bottom: nothing inside it
+# scrolls, and its button sits inside the window.
+CARDFIT = """(sel) => {
+  const c = document.querySelector(sel);
+  if (!c) return null;
+  const scrollers = [c, ...c.querySelectorAll('*')].filter(e => e.scrollHeight > e.clientHeight + 1 && getComputedStyle(e).overflowY !== 'visible');
+  const btn = c.querySelector('.btn, .opt-pill');
+  const bb = btn ? btn.getBoundingClientRect() : null;
+  return { scrolls: scrollers.map(e => [e.className || e.tagName, e.scrollHeight, e.clientHeight]),
+           button_bottom: bb ? Math.round(bb.bottom) : null, window_h: window.innerHeight };
+}"""
+def check_card_fits(page, label, sel=".gcard"):
+    r = page.evaluate(CARDFIT, sel)
+    ok = r is not None and not r["scrolls"] and (r["button_bottom"] is None or r["button_bottom"] <= r["window_h"])
+    check(f"card fits without scrolling ({label})", ok, r)
+
 # ---- round 6 item A: the left column must fit on every map screen -------
 LEFTFIT = """() => {
   const c = document.querySelector('.g-left');
@@ -187,6 +231,120 @@ def check_options_centred(page, label):
     }""")
     check(f"Support card with two options: options centred, no hole under them ({label})",
           d is not None and d[2] == 2 and abs(d[0] - d[1]) <= 1.5, d)
+
+# ---- round 7: tall windows use the screen, short windows stay as round 6 --
+# --u in css/app.css section 0, worked out here for this window's width.
+U = min(14, max(10, 0.3922 * W / 100 + 6.4706))
+TALL = H > 640
+
+def near(got, want, tol):
+    return got is not None and abs(got - want) <= tol
+
+def check_top_tools(page, label):
+    """Full-screen button, Restart and the timer ring (Day 1 Explore)."""
+    fs, rs, ring = box(page, ".btn-fullscreen"), box(page, '[data-act="restart"]'), box(page, ".ring-timer")
+    if fs is None or rs is None or ring is None:
+        check(f"top tools present ({label})", False, f"fullscreen={fs} restart={rs} ring={ring}"); return
+    if TALL:
+        check(f"tall: full-screen button height = 3.1 x u ({label})", near(fs[3], 3.1 * U, 1.5),
+              f"height={fs[3]} want={3.1 * U:.1f} (u={U:.2f})")
+        check(f"tall: Restart height >= 2.4 x u ({label})", rs[3] >= 2.4 * U, f"height={rs[3]} min={2.4 * U:.1f}")
+        check(f"tall: timer ring = 6 x u square ({label})", near(ring[2], 6 * U, 1.5) and near(ring[3], 6 * U, 1.5),
+              f"ring={ring[2]}x{ring[3]} want={6 * U:.1f}")
+    else:
+        check(f"short: full-screen button 34x30 as round 6 ({label})", near(fs[2], 34, 0.5) and near(fs[3], 30, 0.5),
+              f"button={fs[2]}x{fs[3]}")
+        check(f"short: timer ring 54px as round 6 ({label})", near(ring[2], 54, 0.5) and near(ring[3], 54, 0.5),
+              f"ring={ring[2]}x{ring[3]}")
+
+# lh is the height of the dimmed layer the card sits in, less its padding: the
+# box that the card's "min-height: 58%" (css/app.css section 12) is a share of.
+QCARD = """() => { const c = document.querySelector('.qcard'), a = document.querySelector('.stage-area');
+  if (!c || !a) return null;
+  const cb = c.getBoundingClientRect(), ab = a.getBoundingClientRect();
+  const l = c.closest('.card-layer'), ls = getComputedStyle(l);
+  const lh = l.clientHeight - parseFloat(ls.paddingTop) - parseFloat(ls.paddingBottom);
+  const cols = getComputedStyle(c).gridTemplateColumns.split(' ').map(parseFloat);
+  const av = c.querySelector('.avatar.xl, .st-disc.xl');
+  const r = n => Math.round(n * 10) / 10;
+  return { w: r(cb.width), h: r(cb.height), sw: r(ab.width), sh: r(ab.height), lh: r(lh), cols: cols.map(r),
+           av: av ? r(av.getBoundingClientRect().width) : null }; }"""
+
+def check_ask_card(page, label):
+    """The Ines question card: a share of the stage, an even split, the big avatar."""
+    m = page.evaluate(QCARD)
+    if m is None:
+        check(f"question card present ({label})", False); return
+    if TALL:
+        check(f"tall: card width >= 76% of the stage ({label})", m["w"] >= 0.76 * m["sw"],
+              f"card={m['w']} stage={m['sw']} share={m['w'] / m['sw']:.1%}")
+        # Measured against the space inside the dimmed layer (the stage less its
+        # 12px padding), which is what the CSS 58% is of. Against the whole
+        # stage the same card is 55.7% at 1402x789 (see A-NOTE.md, question 1).
+        check(f"tall: card height >= 56% of the space over the map ({label})", m["h"] >= 0.56 * m["lh"],
+              f"card={m['h']} space={m['lh']} share={m['h'] / m['lh']:.1%} (of the whole stage {m['sh']}: {m['h'] / m['sh']:.1%})")
+        check(f"tall: the two columns within 4px of each other ({label})",
+              len(m["cols"]) == 2 and abs(m["cols"][0] - m["cols"][1]) <= 4, f"columns={m['cols']}")
+        check(f"tall: big avatar = 9.6 x u ({label})", near(m["av"], 9.6 * U, 1.5),
+              f"avatar={m['av']} want={9.6 * U:.1f}")
+    else:
+        check(f"short: big avatar 68px as round 6 ({label})", near(m["av"], 68, 0.5), f"avatar={m['av']}")
+
+def check_support_card(page, label):
+    """The first Support question of Day 1 (tall windows only)."""
+    if not TALL:
+        return
+    m = page.evaluate(QCARD)
+    check(f"tall: Support question width >= 82% of the stage ({label})", m is not None and m["w"] >= 0.82 * m["sw"],
+          None if m is None else f"card={m['w']} stage={m['sw']} share={m['w'] / m['sw']:.1%}")
+
+def check_notes_width(page, label):
+    m = page.evaluate("""() => { const p = document.querySelector('.side-panel'), a = document.querySelector('.stage-area');
+      return p && a ? [Math.round(p.getBoundingClientRect().width * 10) / 10, a.clientWidth] : null; }""")
+    if m is None:
+        check(f"Notes panel present ({label})", False); return
+    if TALL:
+        check(f"tall: Notes panel width = 34 x u ({label})", near(m[0], 34 * U, 1.5), f"width={m[0]} want={34 * U:.1f}")
+    else:
+        want = min(420, m[1] - 24)
+        check(f"short: Notes panel width {want}px as round 6 ({label})", near(m[0], want, 0.5), f"width={m[0]} want={want}")
+
+def check_reflect_centred(page, label):
+    """Tall windows only: the Reflect table sits in the middle of the stage, in
+    the space above the 60px kept free at the bottom for the Complete Reflect
+    button (the Reflect panel's own padding: 14px top, 60px bottom)."""
+    if not TALL:
+        return
+    m = page.evaluate("""() => { const t = document.querySelector('.reflect-inner'), p = document.querySelector('.reflect-panel'),
+        a = document.querySelector('.stage-area');
+      if (!t || !p || !a) return null;
+      const tb = t.getBoundingClientRect(), pb = p.getBoundingClientRect(), ab = a.getBoundingClientRect(), ps = getComputedStyle(p);
+      const top = pb.top + parseFloat(ps.paddingTop), bottom = pb.top + p.clientHeight - parseFloat(ps.paddingBottom);
+      return [(tb.top + tb.bottom) / 2, (top + bottom) / 2, (ab.top + ab.bottom) / 2]; }""")
+    if m is None:
+        check(f"Reflect table present ({label})", False); return
+    d = round(m[0] - m[1], 1)
+    check(f"tall: Reflect table centred in the stage above the button space, within 8px ({label})", abs(d) <= 8,
+          f"table centre={m[0]:.1f} space centre={m[1]:.1f} off by {d} (whole stage centre={m[2]:.1f}, off by {m[0] - m[2]:.1f})")
+
+def check_tutorial_arrow(page, label):
+    """Round 7: the arrow's tip lies on the line carried on, and the line stops
+    9 to 11 units short of the tip (so its round cap never pokes through)."""
+    import re, math
+    ds = page.evaluate("""() => [...document.querySelectorAll('.gcard .art-arrow, .gcard .art-arrow-head')]
+      .map(e => [e.getAttribute('class'), e.getAttribute('d')])""")
+    line = [d for c, d in ds if c == "art-arrow"]; head = [d for c, d in ds if c == "art-arrow-head"]
+    if len(line) != 1 or len(head) != 1:
+        check(f"tutorial arrow drawn ({label})", False, ds); return
+    lp = [float(n) for n in re.findall(r"-?\d+(?:\.\d+)?", line[0])]
+    hp = [float(n) for n in re.findall(r"-?\d+(?:\.\d+)?", head[0])]
+    x1, y1, x2, y2 = lp[:4]; tx, ty = hp[:2]
+    L = math.hypot(x2 - x1, y2 - y1)
+    off = abs((x2 - x1) * (ty - y1) - (y2 - y1) * (tx - x1)) / L       # distance of the tip from the line
+    short = math.hypot(tx - x2, ty - y2)
+    ahead = (tx - x1) * (x2 - x1) + (ty - y1) * (y2 - y1) > 0          # the tip is beyond the line's end, not behind it
+    check(f"tutorial arrow: tip on the line's extension ({label})", off <= 0.5 and ahead, f"off by {off:.2f} units")
+    check(f"tutorial arrow: line stops 9-11 units short of the tip ({label})", 9 <= short <= 11, f"gap={short:.2f} units")
 
 def ask(page, target, tid, q, name):
     click(page, f'[data-act="ask"][data-target="{target}"][data-id="{tid}"]')
@@ -228,12 +386,14 @@ def support_all(page, dayname, choices):
         click(page, '[data-act="request-answer"]')
         item = state(page)["ui"]["modal"]["item"]
         settle(page)
+        if n == 0 and dayname == "d1":
+            check_support_card(page, "Day 1 first Support question")
         shot(page, f"{dayname}-{item}-question")
         nopt = page.locator('.qcard.is-question .opt-pill').count()
         if nopt == 2 and "2opt" not in SEEN:
-            SEEN.add("2opt"); check_options_centred(page, dayname + " " + item); check_text_fits(page, "Support question card")
+            SEEN.add("2opt"); check_options_centred(page, dayname + " " + item); check_text_fits(page, "Support question card"); check_card_fits(page, "Support question card", ".qcard")
         if nopt == 4 and "4opt" not in SEEN:
-            SEEN.add("4opt"); check_text_fits(page, "Support question card, four options")
+            SEEN.add("4opt"); check_text_fits(page, "Support question card, four options"); check_card_fits(page, "Support question card, four options", ".qcard")
         anim_watch(page)
         click(page, f'[data-act="support-choose"][data-id="{choices.get(item, "a")}"]')
         n += 1
@@ -265,17 +425,21 @@ with sync_playwright() as p:
     page.wait_for_selector('[data-act="start"]'); shot(page, "start")
     click(page, '[data-act="start"]')
     tut_boxes = []
+    TUT_ARROWS = {1: "tutorial 2, timer", 2: "tutorial 3, notes", 3: "tutorial 4, help"}
     for i in range(5):
         settle(page); shot(page, f"tutorial{i+1}")
         tut_boxes.append((f"tutorial {i+1}", box(page, ".gcard")))
+        check_text_fits(page, f"tutorial {i+1}"); check_card_fits(page, f"tutorial {i+1}")
+        if TUT_ARROWS.get(i):
+            check_tutorial_arrow(page, TUT_ARROWS[i])
         card_next(page)
     check_same_box("tutorial: the five cards are the same size", tut_boxes)
-    check_text_fits(page, "tutorial 5")
+    check_card_fits(page, "Project Introduction")
     shot(page, "onb-intro"); card_next(page)
     settle(page)
     order = ["ob-work", "ob-known", "ob-support", "ob-together"]
     rank_boxes = [("before the first drag", box(page, ".gcard"))]
-    check_text_fits(page, "ranking card")
+    check_text_fits(page, "ranking card"); check_card_fits(page, "ranking card")
     for i, q in enumerate(order):
         anim_watch(page)
         drag(page, f'.rank-card[data-id="{q}"]', f'[data-rank-slot="{i}"]')
@@ -303,7 +467,7 @@ with sync_playwright() as p:
     sc = page.evaluate("""() => { const e = document.querySelector('.gc-scroll');
       return [e.scrollHeight, e.clientHeight]; }""")
     check("Onboarding Brief fits without scrolling", sc[0] <= sc[1] + 1, sc)
-    check_text_fits(page, "Onboarding Brief")
+    check_text_fits(page, "Onboarding Brief"); check_card_fits(page, "Onboarding Brief")
     card_next(page, "d1-goal")
     intro_boxes = []
     card_next(page, "d1-explore-intro"); settle(page)
@@ -326,16 +490,20 @@ with sync_playwright() as p:
     check("toast-1 closes", page.locator(".toast").count() == 0)
     set_time_left(page, 25 * 60); page.wait_for_timeout(1200)
     check_text_fits(page, "Explore map")
+    check_top_tools(page, "Day 1 Explore map")
     click(page, '[data-act="ask"][data-target="person"][data-id="ines"]')
-    settle(page); anim_watch(page)
+    settle(page)
+    check_ask_card(page, "Day 1 Ines question card")
+    anim_watch(page)
     click(page, '[data-act="ask-q"][data-id="feeling"]')
     anim_check(page, "ask card, a question chosen inside it")
-    check_text_fits(page, "ask card")
+    check_text_fits(page, "ask card"); check_card_fits(page, "ask card", ".qcard")
     click(page, '[data-act="card-close"]')
     check("Ines answered", state(page)["run"]["days"][0]["asked"][0]["q"] == "feeling", state(page)["run"]["days"][0]["asked"])
     click(page, '[data-act="ask"][data-target="person"][data-id="priya"]'); click(page, '[data-act="card-close"]')
     ask(page, "person", "priya", "working", "d1-priya")
     click(page, '[data-act="panel"][data-id="notes"]'); shot(page, "d1-notes-people")
+    check_notes_width(page, "Day 1 Explore, Notes open")
     click(page, '[data-act="notes-tab"][data-id="stations"]'); page.wait_for_timeout(150); shot(page, "d1-notes-stations")
     picks = page.evaluate("""() => [...document.querySelectorAll('.sp-pick span:last-child')].map(s => {
       const b = s.getBoundingClientRect(), pb = s.closest('.sp-panel, .side-panel').getBoundingClientRect();
@@ -389,6 +557,7 @@ with sync_playwright() as p:
     check_same_box("Day 1: the four stage-intro cards are the same size", intro_boxes)
     card_next(page, "d1-reflect"); settle(page)
     check_text_fits(page, "Reflect")
+    check_reflect_centred(page, "Day 1 Reflect")
     check_left_column(page, "Day 1 Reflect map")
     anim_watch(page)
     click(page, '[data-act="reflect-pick"][data-person="ines"][data-id="high"]')

@@ -14,11 +14,12 @@ What it makes, in one pass:
   * screens/26-results-detail-late-run.png and 27-time-up.png
                                         from a second run of the same route in
                                         which the clock runs out on Day 3
-  * screens/11*.png                     ten Explore answer cards: the two the
-                                        route itself reaches, plus the eight
+  * screens/11*.png                     sixteen Explore answer cards: the two
+                                        the route itself reaches, the eight
                                         added in round 6 (all four answers that
                                         earn nothing, and four that point the
-                                        candidate somewhere)
+                                        candidate somewhere) and the six added
+                                        in round 7 (11k to 11p)
 
 The Explore answer cards are photographed in a short side pass at the start of
 each day's Explore stage: that day's Explore Requests are raised so every card
@@ -50,18 +51,25 @@ WIDE = {
 }
 
 # The Explore answer cards, by day. (target, id, question, picture name)
-# 11 and 11b were already in the folder; 11c to 11j were added in round 6.
+# 11 and 11b were already in the folder; 11c to 11j were added in round 6,
+# 11k to 11p in round 7.
 ANSWER_CARDS = {
     0: [("person",  "ines",     "feeling", "11-explore-answer"),
         ("person",  "ines",     "working", "11c-explore-answer-d1-ines-working"),
         ("station", "nursery",  "work",    "11d-explore-answer-d1-nursery-work"),
         ("station", "nursery",  "learn",   "11e-explore-answer-d1-nursery-learn"),
-        ("station", "outreach", "work",    "11f-explore-answer-d1-outreach-work")],
+        ("station", "outreach", "work",    "11f-explore-answer-d1-outreach-work"),
+        ("station", "outreach", "learn",   "11k-explore-answer-d1-outreach-learn")],
     1: [("person",  "kofi",     "working", "11g-explore-answer-d2-kofi-working"),
-        ("station", "wildlife", "work",    "11h-explore-answer-d2-wildlife-work")],
+        ("station", "wildlife", "work",    "11h-explore-answer-d2-wildlife-work"),
+        ("person",  "kofi",     "feeling", "11l-explore-answer-d2-kofi-feeling"),
+        ("station", "tide",     "learn",   "11m-explore-answer-d2-tide-learn"),
+        ("station", "wildlife", "learn",   "11n-explore-answer-d2-wildlife-learn")],
     2: [("station", "nursery",  "work",    "11b-explore-answer-day3"),
         ("station", "nursery",  "learn",   "11j-explore-answer-d3-nursery-learn"),
-        ("person",  "ines",     "working", "11i-explore-answer-d3-ines-working")],
+        ("person",  "ines",     "working", "11i-explore-answer-d3-ines-working"),
+        ("person",  "ines",     "feeling", "11o-explore-answer-d3-ines-feeling"),
+        ("station", "wildlife", "learn",   "11p-explore-answer-d3-wildlife-learn")],
 }
 
 # ---------------------------------------------------------------------------
