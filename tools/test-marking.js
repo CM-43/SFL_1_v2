@@ -23,7 +23,7 @@ const day = C.days[1];
 const dr = emptyDay();
 dr.asked = [{ target: 'person', id: 'tomasz', q: 'feeling' }, { target: 'person', id: 'kofi', q: 'feeling' }, { target: 'station', id: 'tide', q: 'work' }];
 dr.assignment = { ines: 'tide', tomasz: 'wildlife', kofi: 'wildlife', priya: 'outreach' };
-dr.reasons = { kofi: 'teammate', priya: 'coverage' };          // Ines and Tomasz are not moved
+dr.reasons = { kofi: 'needs', priya: 'coverage' };             // Ines and Tomasz are not moved
 dr.reasonTo = { kofi: 'wildlife', priya: 'outreach' };
 dr.support = recommendedAll(day);
 dr.reflect = { tomasz: 'low', kofi: 'high', priya: 'high', ines: 'mid' };
@@ -31,7 +31,11 @@ const r = MARKING.markRun(C, runOf([emptyDay(), dr, emptyDay()])).days[1];
 check('Worked example: Explore', [r.explore.score, r.explore.of], [3, 3]);
 check('Worked example: Assign', [r.assign.score, r.assign.of], [6.5, 7]);
 check('Worked example: Assign per person', r.assign.items.map(i => i.person.id + ' ' + i.points + '/' + i.of), ['ines 1.5/1.5', 'tomasz 2/2', 'priya 1.5/1.5', 'kofi 1.5/2']);
-check('Worked example: Kofi reason not honest (Kofi never asked "working" on any day)', r.assign.items.find(i => i.person.id === 'kofi').honest, false);
+check('Worked example: Kofi reason not honest (the Wildlife Workstation was never asked on any day)', r.assign.items.find(i => i.person.id === 'kofi').honest, false);
+{ const d2 = JSON.parse(JSON.stringify(dr)); d2.reasons.kofi = 'teammate';
+  const r2 = MARKING.markRun(C, runOf([emptyDay(), d2, emptyDay()])).days[1];
+  check('"Researcher assistance" is honest after the "feeling" question (2 Oct 2026)', r2.assign.items.find(i => i.person.id === 'kofi').honest, true);
+  check('...and that run scores Assign 7 of 7', [r2.assign.score, r2.assign.of], [7, 7]); }
 check('Worked example: Support', [r.support.score, r.support.of], [4, 4]);
 check('Worked example: Reflect', [r.reflect.score, r.reflect.of], [2, 4]);
 check('Worked example: Reflect cues', r.reflect.items.map(i => i.person.id + ':' + i.cues.join('+')), ['ines:', 'tomasz:asked+support', 'priya:support', 'kofi:asked']);

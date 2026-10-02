@@ -719,7 +719,7 @@ with sync_playwright() as p:
     if MODE == "":
         # Round 5 arithmetic. Onboarding 4/4 · Explore 8/8 · Assign 5.5+7+7 = 19.5/20
         # (Day 1 is out of 6: no pair bonus; Kofi's "Researcher assistance" is still
-        # dishonest because he is never asked "How do you like to work" before Day 2)
+        # dishonest because he is not asked any question before Day 2)
         # Support 13/13 · Reflect 3+3+3 = 9/12.
         # weighted = 10(1) + 15(1) + 25(0.975) + 25(1) + 25(0.75) = 93.125 -> 93.1
         check("score 93.1 weighted / 89th percentile", r.get("weighted") == 93.1 and r.get("percentile") == 89, (r.get("weighted"), r.get("percentile")))

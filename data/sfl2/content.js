@@ -59,7 +59,7 @@ window.SFL_CONTENT = {
     //   Several questions in one need = ANY one of them counts. An empty list = always honest.
     reasons: [
       { id: "preference", label: "Researcher preference",    needs: [{ target: "person",  questions: ["working", "feeling"] }] },
-      { id: "teammate",   label: "Researcher assistance",    needs: [{ target: "person",  questions: ["working"] }] },
+      { id: "teammate",   label: "Researcher assistance",    needs: [{ target: "person",  questions: ["working", "feeling"] }] },   // either question counts (2 Oct 2026): a "feeling" answer can also say who the person wants to work beside
       { id: "needs",      label: "Latest workstation needs", needs: [{ target: "station", questions: ["work", "learn"] }] },
       { id: "coverage",   label: "Workstation coverage",     needs: [] }
     ],
@@ -760,9 +760,9 @@ window.SFL_CONTENT = {
 
    ASSIGN. Day 2 starts: Nursery Priya - Tide Ines - Outreach Kofi - Wildlife Tomasz.
    The candidate moves:
-     Kofi   -> Wildlife, reason "Researcher assistance"
-              (needs Kofi "How do you like to work"; on Day 1 nothing was asked and
-               today only "How are you feeling", so it is NOT honest: the results
+     Kofi   -> Wildlife, reason "Latest workstation needs"
+              (needs a question to the Wildlife Workstation; on Day 1 nothing was asked
+               and today only the Tide was asked, so it is NOT honest: the results
                say "you had not asked, on any day so far, what this reason relies on")
      Priya  -> Outreach, reason "Workstation coverage"  (needs nothing: honest)
      Ines and Tomasz are left where they are (already well placed, so no reason is asked).
