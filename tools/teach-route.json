@@ -1,0 +1,782 @@
+{
+ "onboarding_order": [
+  "ob-work",
+  "ob-known",
+  "ob-support",
+  "ob-together"
+ ],
+ "days": [
+  {
+   "ask": [
+    [
+     "person",
+     "aiko",
+     "feeling"
+    ],
+    [
+     "person",
+     "davi",
+     "feeling"
+    ],
+    [
+     "station",
+     "liaison",
+     "work"
+    ]
+   ],
+   "moves": [
+    [
+     "aiko",
+     "spring",
+     "preference"
+    ],
+    [
+     "davi",
+     "liaison",
+     "needs"
+    ]
+   ],
+   "support": [
+    [
+     "d1-s1",
+     "b"
+    ],
+    [
+     "d1-s2",
+     "a"
+    ],
+    [
+     "d1-s3",
+     "b"
+    ],
+    [
+     "d1-s4",
+     "b"
+    ]
+   ],
+   "reflect": {
+    "mara": "low",
+    "leon": "idk",
+    "aiko": "high",
+    "davi": "mid"
+   }
+  },
+  {
+   "ask": [
+    [
+     "person",
+     "leon",
+     "working"
+    ],
+    [
+     "person",
+     "mara",
+     "feeling"
+    ],
+    [
+     "station",
+     "spring",
+     "work"
+    ]
+   ],
+   "moves": [
+    [
+     "mara",
+     "apiary",
+     "teammate"
+    ],
+    [
+     "aiko",
+     "spring",
+     "needs"
+    ]
+   ],
+   "support": [
+    [
+     "d2-s1",
+     "a"
+    ],
+    [
+     "d2-s2",
+     "b"
+    ],
+    [
+     "d2-s3",
+     "a"
+    ],
+    [
+     "d2-s4",
+     "b"
+    ]
+   ],
+   "reflect": {
+    "mara": "mid",
+    "leon": "high",
+    "aiko": "low",
+    "davi": "idk"
+   }
+  },
+  {
+   "ask": [
+    [
+     "station",
+     "apiary",
+     "work"
+    ],
+    [
+     "station",
+     "spring",
+     "learn"
+    ]
+   ],
+   "moves": [
+    [
+     "aiko",
+     "apiary",
+     "needs"
+    ],
+    [
+     "davi",
+     "spring",
+     "needs"
+    ]
+   ],
+   "support": [
+    [
+     "d3-s1",
+     "a"
+    ],
+    [
+     "d3-s2",
+     "b"
+    ],
+    [
+     "d3-s3",
+     "c"
+    ],
+    [
+     "d3-s4",
+     "b"
+    ],
+    [
+     "d3-s5",
+     "b"
+    ]
+   ],
+   "reflect": {
+    "mara": "idk",
+    "leon": "low",
+    "aiko": "idk",
+    "davi": "high"
+   }
+  }
+ ],
+ "expected": {
+  "weighted": 100,
+  "percentile": 99,
+  "phases": {
+   "onboarding": [
+    4,
+    4
+   ],
+   "explore": [
+    8,
+    8
+   ],
+   "assign": [
+    19,
+    19
+   ],
+   "support": [
+    13,
+    13
+   ],
+   "reflect": [
+    12,
+    12
+   ]
+  }
+ },
+ "steps": [
+  {
+   "screen": "start",
+   "do": "Click \"Start\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "tut.welcome",
+   "do": "Click \"Continue\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "tut.timer",
+   "do": "Click \"Continue\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "tut.notes",
+   "do": "Click \"Continue\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "tut.help",
+   "do": "Click \"Continue\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "tut.complete",
+   "do": "Click \"Start Project\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "onb.intro",
+   "do": "Click \"Start\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "onb.rank",
+   "do": "Drag the four questions into this order: (1) What does the Lab need to get done… (2) What do we know about the problem so far? (3) How can I help each Researcher… (4) How can I get the team working well together? Then click \"Confirm Order\".",
+   "bubbles": 3
+  },
+  {
+   "screen": "onb.brief",
+   "do": "Read, then click \"Understood\".",
+   "bubbles": 2
+  },
+  {
+   "screen": "d1.goal",
+   "do": "Click \"Start Day 1\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d1.explore.intro",
+   "do": "Click \"Start Explore\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d1.explore.map",
+   "do": "Press N twice (the second bubble points at Notes). Open Notes, look at the Researchers tab and the Workstations tab, close Notes. Press N twice more. Then click Aiko.",
+   "bubbles": 4
+  },
+  {
+   "screen": "d1.ask.aiko",
+   "do": "Click \"How are you feeling about the project today?\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d1.answer.aiko",
+   "do": "Click \"Continue\".",
+   "bubbles": 2
+  },
+  {
+   "screen": "d1.explore.map",
+   "do": "Click Davi.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d1.ask.davi",
+   "do": "Click \"How are you feeling about the project today?\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d1.answer.davi",
+   "do": "Click \"Continue\".",
+   "bubbles": 2
+  },
+  {
+   "screen": "d1.explore.map",
+   "do": "Click the Liaison Workstation.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d1.ask.liaison",
+   "do": "Click \"What work is planned here today?\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d1.answer.liaison",
+   "do": "Click \"Continue\".",
+   "bubbles": 2
+  },
+  {
+   "screen": "d1.explore.map",
+   "do": "Click \"Continue\" (bottom-right) to finish Explore.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d1.assign.intro",
+   "do": "Click \"Start Assign\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d1.assign.map",
+   "do": "Drag Aiko from the Meadow to the Spring.",
+   "bubbles": 2
+  },
+  {
+   "screen": "d1.reason.aiko",
+   "do": "Click \"Researcher preference\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d1.assign.map",
+   "do": "Drag Davi from the Spring to the Liaison.",
+   "bubbles": 1
+  },
+  {
+   "screen": "d1.reason.davi",
+   "do": "Click \"Latest workstation needs\".",
+   "bubbles": 2
+  },
+  {
+   "screen": "d1.assign.map",
+   "do": "Click \"Confirm Assignments\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d1.assign.complete",
+   "do": "Click \"Continue\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d1.support.intro",
+   "do": "Click \"Start Support\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d1.support.map",
+   "do": "Click Aiko (she has the alert).",
+   "bubbles": 1
+  },
+  {
+   "screen": "d1.request.d1-s1",
+   "do": "Click \"Answer Request\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d1.question.d1-s1",
+   "do": "Click the second option (thank the chair, and ask for one more day…).",
+   "bubbles": 4
+  },
+  {
+   "screen": "d1.support.map",
+   "do": "Click Leon.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d1.request.d1-s2",
+   "do": "Click \"Answer Request\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d1.question.d1-s2",
+   "do": "Click the first option (tell him what you know so far…).",
+   "bubbles": 3
+  },
+  {
+   "screen": "d1.support.map",
+   "do": "Click Mara.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d1.request.d1-s3",
+   "do": "Click \"Answer Request\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d1.question.d1-s3",
+   "do": "Click the second option (ask the two volunteers to show you…).",
+   "bubbles": 2
+  },
+  {
+   "screen": "d1.support.map",
+   "do": "Click Davi.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d1.request.d1-s4",
+   "do": "Click \"Answer Request\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d1.question.d1-s4",
+   "do": "Click the second option (ask him what worries him…).",
+   "bubbles": 3
+  },
+  {
+   "screen": "d1.support.map",
+   "do": "Click \"Continue\" (bottom-right).",
+   "bubbles": 0
+  },
+  {
+   "screen": "d1.reflect.intro",
+   "do": "Click \"Start Reflect\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d1.reflect",
+   "do": "Open Notes to show that Aiko's and Davi's Explore answers are still there, close Notes. Choose: Mara – Doubtful · Leon – I don't know · Aiko – Confident · Davi – Neutral. Then click \"Complete Reflect\".",
+   "bubbles": 4
+  },
+  {
+   "screen": "d2.goal",
+   "do": "Click \"Start Day 2\".",
+   "bubbles": 2
+  },
+  {
+   "screen": "d2.explore.intro",
+   "do": "Click \"Start Explore\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d2.explore.map",
+   "do": "Open Notes to show they are empty, close Notes. Then click Leon.",
+   "bubbles": 3
+  },
+  {
+   "screen": "d2.ask.leon",
+   "do": "Click \"How do you like to work with the team?\".",
+   "bubbles": 2
+  },
+  {
+   "screen": "d2.answer.leon",
+   "do": "Click \"Continue\".",
+   "bubbles": 2
+  },
+  {
+   "screen": "d2.explore.map",
+   "do": "Click Mara.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d2.ask.mara",
+   "do": "Click \"How are you feeling about the project today?\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d2.answer.mara",
+   "do": "Click \"Continue\".",
+   "bubbles": 2
+  },
+  {
+   "screen": "d2.explore.map",
+   "do": "Click the Spring Workstation.",
+   "bubbles": 1
+  },
+  {
+   "screen": "d2.ask.spring",
+   "do": "Click \"What work is planned here today?\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d2.answer.spring",
+   "do": "Click \"Continue\".",
+   "bubbles": 2
+  },
+  {
+   "screen": "d2.explore.map",
+   "do": "Click \"Continue\" (bottom-right) to finish Explore.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d2.assign.intro",
+   "do": "Click \"Start Assign\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d2.assign.map",
+   "do": "Drag Mara from the Spring to the Apiary.",
+   "bubbles": 2
+  },
+  {
+   "screen": "d2.reason.mara",
+   "do": "Click \"Researcher assistance\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d2.assign.map",
+   "do": "Drag Aiko from the Meadow to the Spring.",
+   "bubbles": 1
+  },
+  {
+   "screen": "d2.reason.aiko",
+   "do": "Click \"Latest workstation needs\".",
+   "bubbles": 2
+  },
+  {
+   "screen": "d2.assign.map",
+   "do": "Click \"Confirm Assignments\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d2.assign.complete",
+   "do": "Click \"Continue\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d2.support.intro",
+   "do": "Click \"Start Support\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d2.support.map",
+   "do": "Click Aiko.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d2.request.d2-s1",
+   "do": "Click \"Answer Request\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d2.question.d2-s1",
+   "do": "Click the first option (tell every grower what has changed…).",
+   "bubbles": 3
+  },
+  {
+   "screen": "d2.support.map",
+   "do": "Two alerts are showing. Click Leon first.",
+   "bubbles": 1
+  },
+  {
+   "screen": "d2.request.d2-s2",
+   "do": "Click \"Answer Request\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d2.question.d2-s2",
+   "do": "Click the second option (ask them both what the growers should leave the meeting knowing…).",
+   "bubbles": 4
+  },
+  {
+   "screen": "d2.support.map",
+   "do": "Click Davi.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d2.request.d2-s3",
+   "do": "Click \"Answer Request\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d2.question.d2-s3",
+   "do": "Click the first option (apologise for the blocked slipway…).",
+   "bubbles": 4
+  },
+  {
+   "screen": "d2.support.map",
+   "do": "Click Mara.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d2.request.d2-s4",
+   "do": "Click \"Answer Request\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d2.question.d2-s4",
+   "do": "Click the second option (send the samples you are sure of…).",
+   "bubbles": 3
+  },
+  {
+   "screen": "d2.support.map",
+   "do": "Click \"Continue\" (bottom-right).",
+   "bubbles": 0
+  },
+  {
+   "screen": "d2.reflect.intro",
+   "do": "Click \"Start Reflect\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d2.reflect",
+   "do": "Choose: Mara – Neutral · Leon – Balanced · Aiko – Unbalanced · Davi – I don't know. Then click \"Complete Reflect\".",
+   "bubbles": 4
+  },
+  {
+   "screen": "d3.goal",
+   "do": "Click \"Start Day 3\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d3.explore.intro",
+   "do": "Click \"Start Explore\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.explore.map",
+   "do": "Point at the two Explore Requests, then at who is lit. Then click the Apiary Workstation.",
+   "bubbles": 2
+  },
+  {
+   "screen": "d3.ask.apiary",
+   "do": "Click \"What work is planned here today?\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d3.answer.apiary",
+   "do": "Click \"Continue\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d3.explore.map",
+   "do": "Click the Spring Workstation.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.ask.spring",
+   "do": "Click \"What have we learned here that could help today?\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d3.answer.spring",
+   "do": "Click \"Continue\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d3.explore.map",
+   "do": "Click \"Continue\" (bottom-right) to finish Explore.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.assign.intro",
+   "do": "Click \"Start Assign\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.assign.map",
+   "do": "Drag Aiko from the Spring to the Apiary.",
+   "bubbles": 2
+  },
+  {
+   "screen": "d3.reason.aiko",
+   "do": "Click \"Latest workstation needs\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d3.assign.map",
+   "do": "Drag Davi from the Liaison to the Spring.",
+   "bubbles": 1
+  },
+  {
+   "screen": "d3.reason.davi",
+   "do": "Click \"Latest workstation needs\".",
+   "bubbles": 1
+  },
+  {
+   "screen": "d3.assign.map",
+   "do": "Click \"Confirm Assignments\".",
+   "bubbles": 2
+  },
+  {
+   "screen": "d3.assign.complete",
+   "do": "Click \"Continue\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.support.intro",
+   "do": "Click \"Start Support\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.support.map",
+   "do": "Two alerts. Click Mara first.",
+   "bubbles": 1
+  },
+  {
+   "screen": "d3.request.d3-s1",
+   "do": "Click \"Answer Request\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.question.d3-s1",
+   "do": "Click the first option (tell all six how much seed there is…).",
+   "bubbles": 3
+  },
+  {
+   "screen": "d3.support.map",
+   "do": "Click Leon.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.request.d3-s2",
+   "do": "Click \"Answer Request\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.question.d3-s2",
+   "do": "Click the second option (visit the grower…).",
+   "bubbles": 3
+  },
+  {
+   "screen": "d3.support.map",
+   "do": "Two new alerts. Click Aiko first.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.request.d3-s3",
+   "do": "Click \"Answer Request\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.question.d3-s3",
+   "do": "Click the third option (speak to the parish council today…).",
+   "bubbles": 3
+  },
+  {
+   "screen": "d3.support.map",
+   "do": "Click Davi.",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.request.d3-s4",
+   "do": "Click \"Answer Request\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.question.d3-s4",
+   "do": "Click the second option (test two of the meters…).",
+   "bubbles": 3
+  },
+  {
+   "screen": "d3.support.map",
+   "do": "Click Aiko (her second request today).",
+   "bubbles": 1
+  },
+  {
+   "screen": "d3.request.d3-s5",
+   "do": "Click \"Answer Request\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.question.d3-s5",
+   "do": "Click the second option (move tonight every hive whose owner is content…).",
+   "bubbles": 3
+  },
+  {
+   "screen": "d3.support.map",
+   "do": "Click \"Continue\" (bottom-right).",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.reflect.intro",
+   "do": "Click \"Start Reflect\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "d3.reflect",
+   "do": "Choose: Mara – I don't know · Leon – Discouraged · Aiko – I don't know · Davi – Encouraged. Then click \"Complete Reflect\".",
+   "bubbles": 4
+  },
+  {
+   "screen": "finish",
+   "do": "Click \"See Your Results\".",
+   "bubbles": 0
+  },
+  {
+   "screen": "results",
+   "do": "Scroll through the results.",
+   "bubbles": 1
+  }
+ ]
+}

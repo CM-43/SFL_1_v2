@@ -92,7 +92,7 @@ var CONTENT = (function () {
   ];
   var TUTORIAL_KEYS = ['welcome', 'timer', 'notes', 'help', 'complete'];
   var KNOWN_PHASES = ['explore', 'assign', 'support', 'reflect'];
-  var KNOWN_ICONS = ['leaf', 'drop', 'signal', 'paw', 'bird', 'sprout', 'wrench', 'chart', 'boat', 'document', 'chat'];
+  var KNOWN_ICONS = ['leaf', 'drop', 'signal', 'paw', 'bird', 'sprout', 'wrench', 'chart', 'boat', 'document', 'chat', 'hive'];
   var KNOWN_COLOURS = ['green', 'blue', 'amber', 'orange', 'purple'];
   var IDK = 'idk';   /* the id the screens give the "I don't know" column */
 
@@ -514,6 +514,109 @@ var CONTENT = (function () {
           }
         }
       });
+    }
+
+    /* ==== PRESENTER AIDS — teaching copy only ==============================
+       The optional "presenter" block at the bottom of a teaching content
+       file. Content without it (the live one) is not affected. */
+    /* A bubble's "anchor": what it points at. One name, or a list of names
+       (think bubbles only). Paper notes use "pad" or "persist". A bubble may
+       also carry "may_cover": a list of anchor names it is allowed to sit on. */
+    var ANCHOR_NAMES = ['none', 'heading', 'body', 'button', 'timer', 'notes-pill', 'help-pill', 'goal', 'stage',
+                        'requests', 'answer', 'message', 'reflect-head', 'results-score'];
+    function anchorIdOk(kind, id) {
+      var allOptions = [];
+      (isArr(c.days) ? c.days : []).forEach(function (d) { (d.support || []).forEach(function (s) { (s.options || []).forEach(function (o) { allOptions.push(o.id); }); }); });
+      var r = c.rules || {}, obq = (c.onboarding && c.onboarding.questions) || [];
+      if (kind === 'person' || kind === 'row') return !!byId(people, id);
+      if (kind === 'station') return !!byId(stations, id);
+      if (kind === 'rank') return !!byId(obq, id);
+      if (kind === 'brief') return /^[1-9]\d*$/.test(id) && +id <= obq.length;
+      if (kind === 'question') return !!byId((r.person_questions || []).concat(r.station_questions || []), id);
+      if (kind === 'reason') return !!byId(r.reasons || [], id);
+      if (kind === 'option') return allOptions.indexOf(id) >= 0;
+      return false;
+    }
+    function checkAnchor(a, style, where) {
+      var w = where + ' > anchor';
+      if (style === 'paper') {
+        if (a !== 'pad' && a !== 'persist') err(w + ': a "paper" note needs "pad" or "persist".');
+        return;
+      }
+      var list = isArr(a) ? a : [a];
+      if (!list.length) { err(w + ' must not be an empty list.'); return; }
+      list.forEach(function (n) {
+        if (!isStr(n)) { err(w + ': each anchor must be a name in quote marks.'); return; }
+        if (n === 'pad' || n === 'persist') { err(w + ': "' + n + '" is only for "paper" notes.'); return; }
+        if (ANCHOR_NAMES.indexOf(n) >= 0) return;
+        var m = /^(person|station|rank|brief|question|reason|option|row):(.+)$/.exec(n);
+        if (!m) err(w + ': "' + n + '" is not an anchor name. Use one of ' + ANCHOR_NAMES.join(', ') + ', or person:, station:, rank:, brief:, question:, reason:, option:, row: followed by an id.');
+        else if (!anchorIdOk(m[1], m[2])) err(w + ': "' + n + '" names an id that does not exist.');
+      });
+    }
+    if (c.presenter !== undefined) {
+      var pr = c.presenter, PW = 'presenter';
+      if (!isObj(pr)) err(PW + ' must be a block in { }, or be left out.');
+      else {
+        if (pr.enabled !== undefined && typeof pr.enabled !== 'boolean') err(PW + ' > "enabled" must be true or false.');
+        if (pr.paper_title !== undefined && !isStr(pr.paper_title)) err(PW + ' > "paper_title" must be words in quote marks.');
+        if (!isArr(pr.steps)) err(PW + ' > "steps" must be a list in [ ], one entry per screen visit.');
+        else pr.steps.forEach(function (st, i) {
+          var w = PW + ' > steps > step ' + (i + 1);
+          if (!isObj(st)) { err(w + ' must be a block in { }.'); return; }
+          if (!isStr(st.screen)) err(w + ' has no "screen".');
+          else w += ' (' + st.screen + ')';
+          if (!isArr(st.bubbles)) { err(w + ' > "bubbles" must be a list in [ ] (it may be empty).'); return; }
+          st.bubbles.forEach(function (b, j) {
+            var wb = w + ' > bubble ' + (j + 1);
+            if (!isObj(b)) { err(wb + ' must be a block in { }.'); return; }
+            if (b.style !== 'think' && b.style !== 'paper') err(wb + ' > "style" must be "think" or "paper".');
+            if (!isStr(b.text)) err(wb + ' has no "text".');
+            if (b.anchor !== undefined) checkAnchor(b.anchor, b.style, wb);
+            /* "may_cover": things the bubble may sit on (e.g. an option already ruled out). */
+            if (b.may_cover !== undefined && (!isArr(b.may_cover) || !b.may_cover.every(isStr))) {
+              err(wb + ' > "may_cover" must be a list in [ ] of anchor names in quote marks.');
+            }
+          });
+        });
+        if (pr.clock_presets_minutes !== undefined) {
+          if (!isArr(pr.clock_presets_minutes)) err(PW + ' > "clock_presets_minutes" must be a list of minutes in [ ].');
+          else pr.clock_presets_minutes.forEach(function (m, i) {
+            if (!isNum(m) || m <= 0 || (isNum(c.time_limit_minutes) && m > c.time_limit_minutes)) {
+              err(PW + ' > clock_presets_minutes > item ' + (i + 1) + ' must be a number of minutes, more than 0 and no more than time_limit_minutes.');
+            }
+          });
+        }
+        if (pr.route !== undefined) {
+          var rt = pr.route, RW = PW + ' > route';
+          if (!isObj(rt)) err(RW + ' must be a block in { }.');
+          else {
+            var obq = (c.onboarding && c.onboarding.questions) || [];
+            if (!isArr(rt.onboarding_order) || rt.onboarding_order.length !== obq.length) err(RW + ' > "onboarding_order" must list every onboarding question once.');
+            else rt.onboarding_order.forEach(function (q) { if (!byId(obq, q)) err(RW + ' > onboarding_order mentions "' + q + '", which is not an onboarding question.'); });
+            if (!isArr(rt.days)) err(RW + ' > "days" must be a list in [ ], one block per day.');
+            else rt.days.forEach(function (rd, di) {
+              var dw = RW + ' > day ' + (di + 1), day = isArr(c.days) ? c.days[di] : null;
+              if (!day) { err(dw + ': there is no Day ' + (di + 1) + ' in the content.'); return; }
+              if (!isObj(rd)) { err(dw + ' must be a block in { }.'); return; }
+              if (!isArr(rd.asked)) err(dw + ' > "asked" must be a list in [ ].');
+              else rd.asked.forEach(function (a) {
+                if (!a || (a.target !== 'person' && a.target !== 'station') || !byId(a.target === 'person' ? people : stations, a.id)) err(dw + ' > asked: each item needs a "target" (person or station) and a known "id".');
+              });
+              ['assignment', 'reasons', 'reasonTo', 'support', 'reflect'].forEach(function (k) {
+                if (!isObj(rd[k])) err(dw + ' > "' + k + '" must be a block in { }.');
+              });
+              if (isObj(rd.assignment)) people.forEach(function (p) {
+                if (!byId(stations, rd.assignment[p.id])) err(dw + ' > assignment: "' + p.id + '" needs a known workstation.');
+              });
+              if (isObj(rd.support)) for (var sid in rd.support) {
+                var sit = byId(day.support || [], sid);
+                if (!sit || !byId(sit.options || [], rd.support[sid])) err(dw + ' > support: "' + sid + '" is not a Support request of that day with an option "' + rd.support[sid] + '".');
+              }
+            });
+          }
+        }
+      }
     }
     return { errors: errors, warnings: warnings };
   }

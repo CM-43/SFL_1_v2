@@ -127,7 +127,7 @@ Anyone named in `override_revealed_by` needs both explanations, and whatever mus
 
 ### Change a Workstation
 Each has `name` (full name), `short` (the word on its sign), `description`, `icon` and `colour`.
-- Icons: `leaf`, `drop`, `signal`, `paw`, `bird`, `sprout`, `wrench`, `chart`, `boat`, `document`, `chat`
+- Icons: `leaf`, `drop`, `signal`, `paw`, `bird`, `sprout`, `wrench`, `chart`, `boat`, `document`, `chat`, `hive`
 - Colours: `green`, `blue`, `amber`, `orange`, `purple`
 
 ### Change Explore for a day
@@ -198,6 +198,51 @@ Everything is in `scoring:`. Examples:
 3. Play through the part you changed, at a small window size as well as full screen.
 4. Optional: open `index.html?content=test-every-shape` to confirm the simulation still copes with unusual shapes.
 5. Optional, for developers with Node.js: `node tools/check-content.js sfl2` runs the same checks without a browser, and `node tools/test-marking.js` checks the marking against the worked example at the bottom of the content file.
+
+## Presenter aids (teaching copy only)
+
+The teaching copy (content `sorrel`) can show the presenter's thinking while a lesson is recorded. Nothing is added to the screen: no buttons, no labels. Everything is done with keys.
+
+| Key | What it does |
+|---|---|
+| `N` | Shows the next bubble for this screen. After the last one, nothing happens |
+| `B` | Goes back one bubble. From the first, it hides it |
+| `H` | Hides the bubble. A second `H` also hides a Reflect summary note. `N` then carries on with the next one |
+| `T` | Holds the clock, and releases it again. No "paused" sign appears |
+| `Ctrl+Shift+1`, `2`, `3` | Jumps to the start of Day 1, 2 or 3, as if the recorded route had been played up to there |
+
+While a yellow bubble or a notepad note shows, the clock stands still. It carries on from the same time when the bubble goes. A bubble goes by itself when the screen changes. If you click somewhere off the route, no bubbles show until you are back on it.
+
+The `presenter` block at the very bottom of `data/sorrel/content.js` holds:
+- `enabled`: `true` to switch the aids on
+- `paper_title`: the small heading on the notepad notes ("On my paper")
+- `clock_presets_minutes`: the time left after a jump to Day 1, 2 and 3 (`[30, 21, 12]`)
+- `route`: the recorded choices, which a jump plays for the days before it
+- `steps`: the recorded route, one entry per screen, in order. Each has a `screen` and its `bubbles`. A bubble has a `style` (`"think"` for the yellow bubble, `"paper"` for a notepad note), an `anchor` and its `text`
+
+A yellow bubble sits next to its `anchor`, which gets a yellow outline, and its tail points at it. The anchor is one name, or a list such as `["option:a", "option:b"]` (the tail points at the first; all are outlined). `"none"` means no anchor.
+
+A yellow bubble may also have `may_cover`, a list of anchor names such as `["option:a"]`: things the bubble is allowed to sit on, for example a Support option already ruled out. They get no outline, and the bubble would rather cover them than the Support message or an option still in play.
+
+| Anchor | What it points at |
+|---|---|
+| `heading`, `body`, `button` | The open card's heading, its text, its main button (on a map: the button bottom-right) |
+| `timer`, `notes-pill`, `help-pill` | The timer, the Notes button, the Help button |
+| `goal`, `stage` | The Day Goal box, the stage list (left column) |
+| `requests` | The Explore Requests counter |
+| `person:aiko`, `station:spring` | That Researcher on the map, that Workstation |
+| `rank:ob-work`, `brief:2` | That question on the ranking screen, that row of the Brief |
+| `question:feeling`, `answer` | That question on an Explore card, the answer text |
+| `reason:needs` | That reason on the Assign card |
+| `message`, `option:b` | The Support message, that Support option |
+| `reflect-head`, `row:leon` | The mood words on the Reflect table, that person's row |
+| `results-score` | The percentile at the top of the results |
+
+A notepad note (`"paper"`) always lies in the same place, bottom-left: `anchor: "pad"` comes and goes like a bubble. `anchor: "persist"` (the Reflect summary, one item per line, written with `\n` between items) stays while that screen's later bubbles are shown, and the clock keeps running while it is the only thing showing.
+
+**To switch it off,** change `enabled: true` to `enabled: false`. The simulation then behaves exactly like the live one. The live content (`sfl2`) has no `presenter` block at all.
+
+To check the teaching copy, start `python3 -m http.server 8765` in this folder, then run `python3 tools/teach-run.py 1920 1080 out` (needs Python and Playwright).
 
 ## 7. Changing the password
 
