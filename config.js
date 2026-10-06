@@ -6,7 +6,7 @@ var CONFIG = {
 
   /* true = ask for a username and password first. false = go straight in
      (for example for a free demo). */
-  requireLogin: false,
+  requireLogin: true,
 
   /* The username, exactly as the customer must type it. */
   username: "CaseMentor3917",
@@ -20,5 +20,5 @@ var CONFIG = {
   /* Which content folder inside data/ to use. "sfl2" = data/sfl2/content.js.
      A different one can also be opened for testing by adding ?content=<name>
      to the web address, e.g. index.html?content=test-every-shape */
-  content: "sorrel"
+  content: "sfl2"
 };
